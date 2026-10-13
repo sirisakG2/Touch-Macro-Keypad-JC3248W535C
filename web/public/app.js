@@ -293,9 +293,10 @@ function renderFirmware() {
   if (!d) { $('fwInfo').textContent = `Latest: ${lv || 'unknown'}\nConnect over USB to check or update.`; btn.disabled = true; btn.textContent = 'Update firmware'; return; }
   const iv = d.info.fw;
   const newer = lv && cmpVer(lv, iv) > 0;
+  const legacy = cmpVer(iv, OTA_SINCE) < 0;   // firmware without in-place updates
   $('fwInfo').textContent = `Installed: ${iv}   Latest: ${lv || 'unknown'}` + (newer ? '\nA new version is available.' : '\nUp to date.');
-  btn.textContent = newer ? `Update to ${lv}` : `Reinstall ${lv || ''}`.trim();
-  btn.disabled = d.kind !== 'usb' || !latest?.app;
+  btn.textContent = legacy ? `Update to ${lv || OTA_SINCE} (one-time setup)` : newer ? `Update to ${lv}` : `Reinstall ${lv || ''}`.trim();
+  btn.disabled = d.kind !== 'usb' || (!legacy && !latest?.app);
   btn.title = d.kind !== 'usb' ? 'Connect over USB to update' : '';
 }
 
@@ -304,9 +305,26 @@ async function loadLatest() {
   renderFirmware();
 }
 
+const OTA_SINCE = '1.3.0';
+
+// Keypads older than 1.3.0 can't update in place: switch them into the chip's USB flashing mode
+// from software (no BOOT button) and hand over to the installer page.
+async function legacyUpdate(d) {
+  if (!confirm('One-time setup: the keypad switches itself into update mode and the installer opens.\n\n' +
+    'Click Install firmware there and pick "USB JTAG/serial debug unit". No buttons needed.\n' +
+    'This step clears the keypad\'s storage once - afterwards connect again and click Save to keypad (your design stays in this browser).')) return;
+  state.device = null;   // the port goes away; don't report it as an unexpected disconnect
+  setConn();
+  await d.rpc('bootloader', {}, 3000).catch(() => {});
+  try { await d.close(); } catch {}
+  window.open('flasher.html?from=studio', '_blank');
+}
+
 async function updateFirmware() {
   const d = state.device;
-  if (!d || !state.latest?.app) return;
+  if (!d) return;
+  if (cmpVer(d.info.fw, OTA_SINCE) < 0) return legacyUpdate(d);
+  if (!state.latest?.app) return;
   if (!confirm(`Install firmware ${state.latest.version} on the keypad? It restarts when done; your layout is kept.`)) return;
   try {
     state.updating = true;

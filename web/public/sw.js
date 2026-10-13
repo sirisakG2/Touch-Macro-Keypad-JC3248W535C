@@ -1,6 +1,6 @@
 // Offline cache for the studio (network first, so new deploys show up immediately).
-const CACHE = 'keypad-studio-v1';
-const ASSETS = ['./', 'index.html', 'style.css', 'app.js', 'keys.js', 'schema.js', 'transport.js', 'designer.js', 'fx.js', 'macro-recorder.js', 'sound.js', 'icons/icon.svg', 'manifest.webmanifest'];
+const CACHE = 'keypad-studio-v2';
+const ASSETS = ['./', 'index.html', 'style.css', 'app.js', 'keys.js', 'schema.js', 'transport.js', 'designer.js', 'fx.js', 'macro-recorder.js', 'sound.js', 'ver.js', 'icons/icon.svg', 'manifest.webmanifest'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS))); self.skipWaiting(); });
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', (e) => {

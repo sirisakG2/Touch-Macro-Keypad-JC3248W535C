@@ -12,7 +12,7 @@
 </head>
 <body>
 <header class="topbar">
-  <div class="brand"><img src="icons/icon.svg" alt="" width="28" height="28"><span>Macro Keypad Studio</span></div>
+  <div class="brand"><img src="icons/icon.svg" alt="" width="28" height="28"><span>Macro Keypad Studio</span><small id="appVer" class="ver" hidden></small></div>
   <div class="conn">
     <span id="connState" class="chip off">Not connected</span>
     <button id="btnUsb" class="btn" title="Connect over USB (Web Serial)">USB</button>
@@ -219,5 +219,6 @@
 </template>
 
 <script type="module" src="app.js"></script>
+<script type="module" src="ver.js"></script>
 </body>
 </html>

@@ -18,8 +18,9 @@
 </style>
 </head>
 <body>
-<header class="topbar"><div class="brand"><img src="icons/icon.svg" alt="" width="28" height="28"><span>Keypad Firmware</span></div><a class="btn ghost" href="./">← Back to the studio</a></header>
+<header class="topbar"><div class="brand"><img src="icons/icon.svg" alt="" width="28" height="28"><span>Keypad Firmware</span><small id="appVer" class="ver" hidden></small></div><a class="btn ghost" href="./">← Back to the studio</a></header>
 <div class="wrap">
+  <div id="fromStudio" class="banner" hidden>Your keypad is already in update mode - no buttons needed. Click <b>Install firmware</b> and pick <b>USB JTAG/serial debug unit</b>. It restarts by itself when done. Then go back to the studio, connect over USB and click <b>Save to keypad</b> once.</div>
   <div class="card">
     <h2>Install or update</h2>
     <p id="ver" class="hint">Loading version…</p>
@@ -32,16 +33,17 @@
   <div class="card">
     <h2>Steps</h2>
     <ol>
-      <li><b>First install (new board):</b> plug the board in with a data USB-C cable and click <i>Install firmware</i>. Pick the port named <code>USB JTAG/serial debug unit</code>.</li>
-      <li><b>Already on firmware 1.3.0 or newer?</b> You don't need this page: open the studio, connect over USB and click <i>Keypad → Update firmware</i>. The keypad installs it and restarts by itself.</li>
-      <li><b>Updating from 1.2.0 or older (one time only):</b> it now shows up as a keyboard, so put it in update mode first:
-        either click <i>Keypad → Restart into firmware update mode</i> in the studio, or hold <b>BOOT</b>, tap <b>RESET</b>, release <b>BOOT</b>. Then click <i>Install firmware</i>.</li>
-      <li>When it finishes, press <b>RESET</b> (or unplug and plug in again). Moving to 1.3.0 clears the keypad's storage once, so open the studio and click <i>Save to keypad</i> again - your design is still in the browser.</li>
+      <li><b>Keypad already on firmware 1.3.0 or newer:</b> you don't need this page. In the studio, connect over USB and click <i>Keypad &rarr; Update firmware</i>. It installs and restarts by itself.</li>
+      <li><b>Keypad on 1.2.0 or older (one time):</b> in the studio, connect over USB and click <i>Keypad &rarr; Update to 1.3.0 (one-time setup)</i>. The keypad switches itself into update mode and this page opens. Click <i>Install firmware</i> and pick <code>USB JTAG/serial debug unit</code>. Afterwards click <i>Save to keypad</i> in the studio once, because this step clears the keypad's storage.</li>
+      <li><b>New board:</b> plug it in with a data USB-C cable, click <i>Install firmware</i> and pick <code>USB JTAG/serial debug unit</code>.</li>
+      <li><b>Last resort</b> (the keypad doesn't respond): unplug it, hold <b>BOOT</b>, plug it in, release BOOT, then install. Press <b>RESET</b> afterwards if the screen stays dark.</li>
       <li>Choosing <i>Erase</i> also wipes your saved layout and pictures. Export your project in the studio first.</li>
     </ol>
   </div>
 </div>
+<script type="module" src="ver.js"></script>
 <script>
+  if (new URLSearchParams(location.search).get('from') === 'studio') document.getElementById('fromStudio').hidden = false;
   fetch('fw/manifest.json').then((r) => r.json()).then((m) => {
     document.getElementById('ver').textContent = `Firmware ${m.version}` + (m.built ? ` · built ${m.built}` : '');
   }).catch(() => { document.getElementById('ver').textContent = 'No firmware build found on this server yet.'; });
