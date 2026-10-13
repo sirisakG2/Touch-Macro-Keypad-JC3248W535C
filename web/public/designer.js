@@ -1,6 +1,7 @@
 // Renders keycaps and page backgrounds exactly as the keypad will show them, packs them into the
 // firmware's .565 image format, and compiles the editable project into the device config.
 import { SCREEN, setOrientation } from './schema.js';
+import { loadIcons, iconDataUrl } from './icons.js';
 
 export const STYLES = ['flat', '3d', 'glass', 'outline', 'neon', 'image'];
 export const FONTS = ['system-ui', 'Arial', 'Georgia', 'Courier New', 'Impact', 'Trebuchet MS', 'Verdana', 'monospace'];
@@ -107,17 +108,40 @@ export async function drawCap(ctx, key, mosaic = null) {
       ctx.restore();
     }
   }
-  if (key.label) {
-    const px = key.fontPx || 20;
-    ctx.font = `${key.fontWeight || 700} ${px}px ${key.font || 'system-ui'}`;
-    ctx.fillStyle = key.text || '#ffffff';
-    ctx.globalAlpha = Math.max(0, Math.min(100, key.textOpacity ?? 100)) / 100;   // label transparency
+  // Icon (Lucide) + label. iconPos: 'above' (default), 'left' (icon then text), 'only' (icon, no text).
+  const alpha = Math.max(0, Math.min(100, key.textOpacity ?? 100)) / 100;   // label/icon transparency
+  let iconImg = null, iconPx = 0;
+  if (key.icon?.name) {
+    await loadIcons();
+    iconImg = await loadImage(iconDataUrl(key.icon.name, key.icon.color || key.text || '#ffffff', 2));
+    iconPx = Math.round(Math.min(w, h) * (key.icon.size || 45) / 100);
+  }
+  const iconPos = iconImg ? (key.iconPos || 'above') : null;
+  const showText = key.label && iconPos !== 'only';
+  const px = key.fontPx || 20;
+  ctx.font = `${key.fontWeight || 700} ${px}px ${key.font || 'system-ui'}`;
+  ctx.fillStyle = key.text || '#ffffff';
+  ctx.globalAlpha = alpha;
+  ctx.textBaseline = 'middle';
+  if (style === 'neon') { ctx.shadowColor = key.text || c; ctx.shadowBlur = 8; }
+  else if (key.image || slice) { ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4; }
+  const lines = showText ? String(key.label).split('\n') : [];
+  const lh = px * 1.15;
+  if (iconPos === 'left' && lines.length) {
+    const text = lines.join(' ');
+    const tw = Math.min(ctx.measureText(text).width, w - iconPx - 14);
+    const x0 = (w - (iconPx + 6 + tw)) / 2;
+    ctx.drawImage(iconImg, x0, (h - iconPx) / 2, iconPx, iconPx);
+    ctx.textAlign = 'left';
+    ctx.fillText(text, x0 + iconPx + 6, h / 2, w - iconPx - 14);
+  } else if (iconPos) {
+    const textH = lines.length ? 4 + lh * lines.length : 0;
+    const top = (h - iconPx - textH) / 2;
+    ctx.drawImage(iconImg, (w - iconPx) / 2, top, iconPx, iconPx);
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    if (style === 'neon') { ctx.shadowColor = key.text || c; ctx.shadowBlur = 8; }
-    else if (key.image || slice) { ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4; }
-    const lines = String(key.label).split('\n');
-    const lh = px * 1.15;
+    lines.forEach((ln, i) => ctx.fillText(ln, w / 2, top + iconPx + 4 + lh * (i + 0.5), w - 8));
+  } else if (lines.length) {
+    ctx.textAlign = 'center';
     const pos = key.labelPos || (key.image && key.imageFit === 'icon' ? 'bottom' : 'center');
     const y0 = pos === 'bottom' ? h - 8 - lh * (lines.length - 0.5) : pos === 'top' ? 8 + lh / 2 : h / 2 - (lh * (lines.length - 1)) / 2;
     lines.forEach((ln, i) => ctx.fillText(ln, w / 2, y0 + i * lh, w - 8));

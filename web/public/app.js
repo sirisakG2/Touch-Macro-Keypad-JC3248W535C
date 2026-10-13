@@ -4,6 +4,7 @@ import { SCREEN, MOTIONS, LIGHTS, IDLES, ORIENTATIONS, setOrientation, screenFor
 import { Device, SerialLink, BleLink } from './transport.js';
 import { STYLES, FONTS, compileProject, designHash, drawCap, renderCapCanvas, renderBgCanvas, renderMosaic, importImage, asciiLabel } from './designer.js';
 import { Preview } from './fx.js';
+import { loadIcons, iconSvg, searchIcons, ICON_GROUPS } from './icons.js';
 import { Recorder, eventsToRawSteps, simplifySteps } from './macro-recorder.js';
 import { SOUND_PRESETS, playClick } from './sound.js';
 
@@ -43,6 +44,17 @@ function defaultProject() {
       { id: uid(), name: 'Nav', bg: { type: 'gradient', color: '#101010', color2: '#203020' }, keys: nav.map((o) => newKey({ fontPx: 26, ...o })) },
     ],
   };
+  // Lucide icons on the built-in keys (icon above the label; arrows icon-only)
+  const ICON = { Copy: 'copy', Paste: 'clipboard-paste', Cut: 'scissors', Undo: 'undo-2', Redo: 'redo-2', Save: 'save', Find: 'search',
+    'Select\nall': 'text-cursor-input', Desktop: 'monitor', Lock: 'lock', 'Alt+Tab': 'app-window',
+    '↑': 'arrow-up', '←': 'arrow-left', '↓': 'arrow-down', '→': 'arrow-right', PgUp: 'chevrons-up', PgDn: 'chevrons-down' };
+  for (const pg of p.pages) for (const key of pg.keys) {
+    const name = ICON[key.label];
+    if (!name) continue;
+    const arrow = '↑←↓→'.includes(key.label);
+    Object.assign(key, { icon: { name, size: arrow ? 55 : 40 }, iconPos: arrow ? 'only' : 'above', fontPx: arrow ? 26 : 16 });
+    if (key.label === 'Select\nall') key.label = 'Select all';
+  }
   layoutGrid(p.pages[0], 4, 3, 10, 6);
   layoutGrid(p.pages[1], 3, 2, 10, 6);
   return p;
@@ -157,7 +169,7 @@ async function refreshVisuals() {
   if (kpSig !== state.kpSig) { state.kpSig = kpSig; state.mosaic = await renderMosaic(page); }
   const mosaic = state.mosaic;
   // keys that show a slice of the page picture depend on where they sit
-  const sigs = page.keys.map((k) => JSON.stringify([k.w, k.h, k.r, k.label, k.font, k.fontPx, k.fontWeight, k.text, k.textOpacity, k.labelPos, k.style, k.color, k.image, k.imageFit,
+  const sigs = page.keys.map((k) => JSON.stringify([k.w, k.h, k.r, k.label, k.font, k.fontPx, k.fontWeight, k.text, k.textOpacity, k.labelPos, k.icon, k.iconPos, k.style, k.color, k.image, k.imageFit,
     mosaic && !k.image ? [kpSig.length, kpSig.slice(-64), k.x, k.y] : 0]));
   const caps = [];
   for (let i = 0; i < page.keys.length; i++) {
@@ -220,6 +232,7 @@ function renderKeyForm() {
   $('kWeight').value = String(k.fontWeight);
   $('kText').value = k.text;
   $('kLabelPos').value = k.labelPos || '';
+  renderIconForm(k);
   $('kTextT').value = 100 - (k.textOpacity ?? 100);
   $('kTextTVal').textContent = `${100 - (k.textOpacity ?? 100)}%`;
   $('kColor').value = k.color;
@@ -231,6 +244,76 @@ function renderKeyForm() {
   $('kImgPage').hidden = !(curPage().keysPic?.image && k.image);
   for (const f of ['x', 'y', 'w', 'h']) $('k' + f.toUpperCase()).value = Math.round(k[f]);
   renderStyleSwatches(k);
+}
+
+function renderIconForm(k) {
+  const ic = k.icon;
+  $('kIconPrev').innerHTML = ic?.name ? (iconSvg(ic.name, 'currentColor') || '…') : '';
+  $('kIconPrev').title = ic?.name || 'No icon';
+  if (ic?.name && !$('kIconPrev').innerHTML.startsWith('<svg')) loadIcons().then(() => renderIconForm(k));   // data not loaded yet
+  $('kIconClear').disabled = !ic?.name;
+  for (const id of ['kIconColor', 'kIconPos', 'kIconSize']) $(id).disabled = !ic?.name;
+  $('kIconColor').value = ic?.color || k.text || '#ffffff';
+  $('kIconPos').value = k.iconPos || 'above';
+  $('kIconSize').value = ic?.size || 45;
+  $('kIconSizeVal').textContent = `${ic?.size || 45}%`;
+}
+
+// ---- icon table (Lucide)
+const iconPicker = { group: 'Popular', shown: 0, list: [] };
+async function openIconPicker() {
+  const dlg = $('iconDlg');
+  dlg.showModal();
+  $('iconGrid').innerHTML = '<p class="hint">Loading icons…</p>';
+  await loadIcons();
+  const groups = ['Popular', ...Object.keys(ICON_GROUPS).filter((g) => g !== 'Popular'), 'All'];
+  const pickGroup = (g) => {
+    iconPicker.group = g;
+    $('iconSearch').value = '';
+    seg($('iconGroups'), groups, null, g, pickGroup);
+    fillIconGrid();
+  };
+  seg($('iconGroups'), groups, null, iconPicker.group, pickGroup);
+  $('iconSearch').value = '';
+  fillIconGrid();
+  $('iconSearch').focus();
+}
+function fillIconGrid(more = false) {
+  const grid = $('iconGrid');
+  if (!more) {
+    const q = $('iconSearch').value;
+    iconPicker.list = searchIcons(q, q.trim() ? 'All' : iconPicker.group);   // searching looks through every icon
+    iconPicker.shown = 0;
+    grid.innerHTML = '';
+  } else grid.querySelector('.more')?.remove();
+  const cur = curKey()?.icon?.name;
+  const next = iconPicker.list.slice(iconPicker.shown, iconPicker.shown + 300);
+  for (const name of next) {
+    const b = document.createElement('button');
+    b.innerHTML = `${iconSvg(name, 'currentColor')}<span>${name}</span>`;
+    b.title = name;
+    b.classList.toggle('on', name === cur);
+    b.onclick = () => pickIcon(name);
+    grid.appendChild(b);
+  }
+  iconPicker.shown += next.length;
+  if (iconPicker.shown < iconPicker.list.length) {
+    const m = document.createElement('button');
+    m.className = 'more';
+    m.textContent = `Show more (${iconPicker.list.length - iconPicker.shown} left)`;
+    m.onclick = () => fillIconGrid(true);
+    grid.appendChild(m);
+  }
+  if (!iconPicker.list.length) grid.innerHTML = '<p class="hint">No icons match. Try another word, e.g. "sound" or "arrow".</p>';
+  $('iconCount').textContent = `${iconPicker.list.length} icons`;
+}
+function pickIcon(name) {
+  const k = curKey();
+  if (!k) return;
+  k.icon = { size: 45, ...k.icon, name };
+  k.iconPos ||= 'above';
+  $('iconDlg').close();
+  changed({ panels: true });
 }
 
 async function renderStyleSwatches(k) {
@@ -929,6 +1012,14 @@ function wire() {
   kset('fontWeight', Number, 'change')('kWeight');
   kset('text')('kText');
   kset('labelPos', String, 'change')('kLabelPos');
+  $('kIconPick').onclick = () => { if (curKey()) openIconPicker(); };
+  $('kIconClear').onclick = () => { const k = curKey(); if (k) { k.icon = null; changed({ panels: true }); } };
+  bindInput('kIconColor', (t) => { const k = curKey(); if (k?.icon) { k.icon = { ...k.icon, color: t.value }; changed(); } });
+  bindInput('kIconPos', (t) => { const k = curKey(); if (k) { k.iconPos = t.value; changed(); } }, 'change');
+  bindInput('kIconSize', (t) => { const k = curKey(); if (k?.icon) { k.icon = { ...k.icon, size: +t.value }; $('kIconSizeVal').textContent = `${t.value}%`; changed(); } });
+  $('iconClose').onclick = () => $('iconDlg').close();
+  $('iconSearch').addEventListener('input', () => fillIconGrid());
+  $('iconDlg').addEventListener('click', (e) => { if (e.target === $('iconDlg')) $('iconDlg').close(); });   // click outside
   bindInput('kTextT', (t) => {
     const k = curKey();
     if (!k) return;
@@ -939,7 +1030,7 @@ function wire() {
 
   // "Apply to ..." buttons: copy the selected key's text style or keycap/picture layout to other keys
   const APPLY = {
-    text: { fields: ['font', 'fontPx', 'fontWeight', 'text', 'textOpacity', 'labelPos'], what: 'text style' },
+    text: { fields: ['font', 'fontPx', 'fontWeight', 'text', 'textOpacity', 'labelPos', 'iconPos', 'iconLook'], what: 'text & icon style' },
     layout: { fields: ['style', 'r', 'imageFit'], what: 'keycap & picture layout' },
   };
   for (const b of document.querySelectorAll('[data-apply]')) {
@@ -949,7 +1040,14 @@ function wire() {
       const { fields, what } = APPLY[b.dataset.apply];
       const pages = b.dataset.scope === 'all' ? state.project.pages : [curPage()];
       let n = 0;
-      for (const pg of pages) for (const o of pg.keys) { if (o === k) continue; for (const f of fields) o[f] = k[f]; n++; }
+      for (const pg of pages) for (const o of pg.keys) {
+        if (o === k) continue;
+        for (const f of fields) {
+          if (f === 'iconLook') { if (o.icon && k.icon) o.icon = { ...o.icon, color: k.icon.color, size: k.icon.size }; }   // icon colour/size, not the icon itself
+          else o[f] = k[f];
+        }
+        n++;
+      }
       changed({ panels: true });
       toast(`Applied ${what} to ${n} key${n === 1 ? '' : 's'}${b.dataset.scope === 'all' ? ' on all pages' : ' on this page'}.`);
     };

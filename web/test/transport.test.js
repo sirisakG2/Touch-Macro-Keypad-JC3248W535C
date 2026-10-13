@@ -31,3 +31,19 @@ test('designHash is stable for the same design and changes with any edit', async
   q.pages[0].keys[0].label = 'Copy!';
   assert.notEqual(designHash(p), designHash(q));
 });
+
+test('icon library: data, SVG output and search', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { setIconData, iconSvg, searchIcons, ICON_GROUPS } = await import('../public/icons.js');
+  const d = JSON.parse(readFileSync(new URL('../public/icons/lucide.json', import.meta.url)));
+  assert.ok(Object.keys(d.icons).length > 1000);
+  assert.match(d.license, /ISC/);
+  setIconData(d);
+  const svg = iconSvg('copy', '#ff0000');
+  assert.match(svg, /^<svg[^>]+stroke="#ff0000"/);
+  assert.match(svg, /<(path|rect)/);
+  assert.equal(iconSvg('no-such-icon'), null);
+  assert.equal(searchIcons('copy')[0], 'copy');
+  assert.ok(searchIcons('sound').some((n) => n.startsWith('volume')));    // found through Lucide tags
+  assert.ok(ICON_GROUPS.Popular.filter((n) => d.icons[n]).length > 40);
+});

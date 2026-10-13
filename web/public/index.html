@@ -120,6 +120,16 @@
           <label>Position <select id="kLabelPos"><option value="">Auto</option><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option></select></label>
         </div>
         <label>Text transparency <span class="val" id="kTextTVal">0%</span><input id="kTextT" type="range" min="0" max="100" step="5"></label>
+        <h3>Icon</h3>
+        <div class="iconrow">
+          <div id="kIconPrev" class="iconprev" title="Current icon"></div>
+          <div class="row wrap"><button id="kIconPick" class="btn sm">Choose icon…</button><button id="kIconClear" class="btn sm ghost">Remove</button></div>
+        </div>
+        <div class="row">
+          <label>Icon color <input id="kIconColor" type="color"></label>
+          <label>Place <select id="kIconPos"><option value="above">Above label</option><option value="left">Left of label</option><option value="only">Icon only</option></select></label>
+        </div>
+        <label>Icon size <span class="val" id="kIconSizeVal">45%</span><input id="kIconSize" type="range" min="15" max="90" step="5"></label>
         <div class="applyrow"><span>Apply text style to</span><button class="btn sm" data-apply="text" data-scope="page">This page</button><button class="btn sm" data-apply="text" data-scope="all">All pages</button></div>
         <h3>Keycap</h3>
         <div class="styles" id="kStyle"></div>
@@ -222,6 +232,16 @@
     </div>
   </aside>
 </main>
+
+<dialog id="iconDlg" class="icondlg">
+  <div class="dlghead">
+    <input id="iconSearch" type="search" placeholder="Search icons - e.g. copy, volume, mail, lock" autocomplete="off">
+    <button id="iconClose" class="btn sm ghost" title="Close (Esc)">✕</button>
+  </div>
+  <div id="iconGroups" class="seg wrapseg"></div>
+  <div id="iconGrid" class="icongrid"></div>
+  <div class="dlgfoot"><span id="iconCount"></span><span>Icons: <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a> (ISC license)</span></div>
+</dialog>
 
 <div id="progress" class="progress" hidden><div class="bar"><span></span></div><div class="label"></div></div>
 <div id="toast" class="toast" hidden></div>

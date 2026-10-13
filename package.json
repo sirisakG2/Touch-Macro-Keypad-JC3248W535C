@@ -9,7 +9,8 @@
     "dev": "wrangler dev",
     "test": "node --test web/test/*.test.js",
     "deploy": "wrangler deploy",
-    "deploy:ci": "sh -c 'SHA=${WORKERS_CI_COMMIT_SHA:-$(git rev-parse HEAD)}; wrangler deploy --var GIT_COMMIT:$(echo $SHA | cut -c1-7) --var APP_VERSION:$npm_package_version'"
+    "deploy:ci": "sh -c 'SHA=${WORKERS_CI_COMMIT_SHA:-$(git rev-parse HEAD)}; wrangler deploy --var GIT_COMMIT:$(echo $SHA | cut -c1-7) --var APP_VERSION:$npm_package_version'",
+    "icons": "node scripts/gen-icons.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.149.0"
