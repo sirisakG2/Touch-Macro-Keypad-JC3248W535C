@@ -193,8 +193,14 @@
       <p class="hint">The sound plays while this page is open (or installed as an app), over USB or Bluetooth.</p>
       <h3>Keypad</h3>
       <div id="devInfo" class="devinfo">Not connected.</div>
+      <h3>Firmware</h3>
+      <div id="fwInfo" class="devinfo">Connect over USB to check for updates.</div>
       <div class="row wrap">
-        <button id="dBoot" class="btn sm ghost" disabled>Restart into firmware update mode</button>
+        <button id="fwUpdate" class="btn sm primary" disabled>Update firmware</button>
+      </div>
+      <p class="hint">Updates install over USB in about 30 s and the keypad restarts by itself - no BOOT button needed. Your layout is kept.</p>
+      <div class="row wrap">
+        <button id="dBoot" class="btn sm ghost" disabled title="Only needed for a full install from the Firmware page">Restart into bootloader</button>
         <button id="dReboot" class="btn sm ghost" disabled>Restart keypad</button>
       </div>
     </div>

@@ -5,6 +5,7 @@
 #include "ui.h"
 #include <ArduinoJson.h>
 #include <LittleFS.h>
+#include <Update.h>
 #include <esp32-hal-tinyusb.h>
 #include <esp_rom_crc.h>
 #include <mbedtls/base64.h>
@@ -14,6 +15,11 @@ enum Src : uint8_t { SRC_USB, SRC_BLE };
 #define PROTO_LINE_MAX 12288
 static char *lineBuf[2];
 static size_t lineLen[2];
+
+// Firmware update (OTA) state.
+static bool otaActive = false;
+static uint32_t otaSize = 0, otaDone = 0, otaCrc = 0;
+static int otaPct = -1;
 
 // One upload at a time.
 static File upFile;
@@ -196,6 +202,61 @@ static void handle(Src src, char *line, size_t len) {
     uiSetPage(req["p"] | 0);
   } else if (!strcmp(cmd, "bright")) {
     uiBrightnessPreview(req["v"] | -1);
+  } else if (!strncmp(cmd, "ota_", 4) && src != SRC_USB) {
+    err = "connect over USB to update the firmware";
+  } else if (!strcmp(cmd, "ota_begin")) {
+    uint32_t size = req["size"] | 0;
+    if (otaActive) Update.abort();
+    otaActive = false;
+    if (!size) err = "size missing";
+    else if (!Update.begin(size, U_FLASH)) err = String("begin: ") + Update.errorString();
+    else {
+      otaActive = true; otaSize = size; otaDone = 0; otaCrc = 0; otaPct = 0;
+      uiMessage("Updating 0%");
+    }
+  } else if (!strcmp(cmd, "ota_chunk")) {
+    const char *data = req["data"] | "";
+    uint32_t off = req["off"] | 0;
+    if (!otaActive) err = "no update running";
+    else if (off != otaDone) err = "offset " + String(otaDone);
+    else {
+      static unsigned char bin[8192];
+      size_t olen = 0;
+      if (mbedtls_base64_decode(bin, sizeof(bin), &olen, (const unsigned char *)data, strlen(data))) err = "base64";
+      else if (Update.write(bin, olen) != olen) err = String("write: ") + Update.errorString();
+      else {
+        otaDone += olen;
+        otaCrc = esp_rom_crc32_le(otaCrc, bin, olen);
+        res["done"] = otaDone;
+        int pct = (int)((uint64_t)otaDone * 100 / otaSize);
+        if (pct / 5 != otaPct / 5) {
+          otaPct = pct;
+          static char msg[24];
+          snprintf(msg, sizeof(msg), "Updating %d%%", pct);
+          uiMessage(msg);
+        }
+      }
+    }
+    if (err.length() && otaActive) { Update.abort(); otaActive = false; uiMessage("Update failed"); }
+  } else if (!strcmp(cmd, "ota_end")) {
+    uint32_t crc = req["crc"] | 0;
+    if (!otaActive) err = "no update running";
+    else if (otaDone != otaSize) err = "size mismatch";
+    else if (crc != otaCrc) err = "crc mismatch";
+    else if (!Update.end(true)) err = String("verify: ") + Update.errorString();   // checks image + SHA-256
+    if (err.length()) {
+      if (otaActive) Update.abort();
+      otaActive = false;
+      uiMessage("Update failed");
+    } else {
+      otaActive = false;
+      uiMessage("Restarting...");
+      sendLine(src, String("{\"id\":") + (int)(req["id"] | 0) + ",\"ok\":true}");
+      Serial.flush();
+      delay(400);
+      ESP.restart();
+      return;
+    }
   } else if (!strcmp(cmd, "bootloader")) {
     sendLine(src, String("{\"id\":") + (int)(req["id"] | 0) + ",\"ok\":true}");
     delay(200);

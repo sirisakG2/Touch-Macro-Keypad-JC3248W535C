@@ -102,7 +102,7 @@ const db = {
 // ---------------------------------------------------------------- state
 const state = {
   project: null, page: 0, key: -1, mode: 'edit', device: null, caps: [], capSig: [], bg: null, bgSig: '',
-  recorder: new Recorder(), recording: false, unsaved: false,
+  recorder: new Recorder(), recording: false, unsaved: false, latest: null, updating: false,
 };
 const preview = new Preview($('screen'));
 const curPage = () => state.project.pages[state.page];
@@ -273,8 +273,81 @@ function renderDevice() {
   $('devInfo').textContent = d
     ? `Connected over ${d.kind === 'usb' ? 'USB' : 'Bluetooth'}\nFirmware ${d.info.fw} · ${d.info.board}\nTyping via: ${d.info.link.toUpperCase()}   Bluetooth: ${d.info.ble}\nStorage: ${(d.info.fsUsed / 1048576).toFixed(1)} / ${(d.info.fsTotal / 1048576).toFixed(1)} MB${d.info.frameMs !== undefined ? `\nScreen frame time: ${d.info.frameMs} ms` : ''}`
     : 'Not connected.';
+  renderFirmware();
   $('dBoot').disabled = !d || d.kind !== 'usb';
   $('dReboot').disabled = !d;
+}
+
+// '1.10.0' > '1.9.0'
+function cmpVer(a, b) {
+  const pa = String(a || '0').split('.').map(Number), pb = String(b || '0').split('.').map(Number);
+  for (let i = 0; i < 3; i++) if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) - (pb[i] || 0);
+  return 0;
+}
+
+function renderFirmware() {
+  const d = state.device, latest = state.latest;
+  const btn = $('fwUpdate');
+  const lv = latest?.version;
+  if (state.updating) return;
+  if (!d) { $('fwInfo').textContent = `Latest: ${lv || 'unknown'}\nConnect over USB to check or update.`; btn.disabled = true; btn.textContent = 'Update firmware'; return; }
+  const iv = d.info.fw;
+  const newer = lv && cmpVer(lv, iv) > 0;
+  $('fwInfo').textContent = `Installed: ${iv}   Latest: ${lv || 'unknown'}` + (newer ? '\nA new version is available.' : '\nUp to date.');
+  btn.textContent = newer ? `Update to ${lv}` : `Reinstall ${lv || ''}`.trim();
+  btn.disabled = d.kind !== 'usb' || !latest?.app;
+  btn.title = d.kind !== 'usb' ? 'Connect over USB to update' : '';
+}
+
+async function loadLatest() {
+  try { state.latest = await (await fetch('fw/manifest.json', { cache: 'no-store' })).json(); } catch { state.latest = null; }
+  renderFirmware();
+}
+
+async function updateFirmware() {
+  const d = state.device;
+  if (!d || !state.latest?.app) return;
+  if (!confirm(`Install firmware ${state.latest.version} on the keypad? It restarts when done; your layout is kept.`)) return;
+  try {
+    state.updating = true;
+    progress('Downloading firmware…', 0);
+    const res = await fetch(`fw/${state.latest.app.path}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`download failed (${res.status})`);
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    if (state.latest.app.size && bytes.length !== state.latest.app.size) throw new Error('download incomplete, try again');
+    const t0 = performance.now();
+    await d.updateFirmware(bytes, (a, b) => progress(`Installing firmware… ${Math.round((a / b) * 100)}%`, a / b));
+    progress('Restarting keypad…', 1);
+    console.log(`firmware upload took ${((performance.now() - t0) / 1000).toFixed(1)} s`);
+    await reconnectAfterReboot(d.link.port);
+  } catch (e) {
+    toast(`Update failed: ${e.message}\nThe keypad keeps running its current firmware.`, true);
+  } finally {
+    state.updating = false;
+    progress(null);
+    renderDevice();
+  }
+}
+
+// After an update the keypad re-enumerates on USB; reopen the already-granted port without a picker.
+async function reconnectAfterReboot(oldPort) {
+  try { await state.device?.close(); } catch {}
+  state.device = null;
+  setConn();
+  const until = Date.now() + 25000;
+  await new Promise((r) => setTimeout(r, 2500));
+  while (Date.now() < until) {
+    const ports = (await navigator.serial.getPorts()).filter((p) => p.getInfo().usbVendorId === 0x303a);
+    for (const port of [oldPort, ...ports.filter((p) => p !== oldPort)]) {
+      try {
+        await attach(await Device.connect('usb', port));
+        toast(`Firmware updated - keypad now runs ${state.device.info.fw}`);
+        return;
+      } catch { /* not back yet */ }
+    }
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  toast('The keypad restarted. Click USB to connect again.');
 }
 
 function renderPanels() {
@@ -531,14 +604,20 @@ function setConn() {
   renderSteps();
 }
 
+async function attach(d) {
+  state.device = d;
+  d.onEvent = onDeviceEvent;
+  d.onClose = () => { if (state.device !== d) return; state.device = null; setConn(); if (!state.updating) toast('Keypad disconnected'); };
+  setConn();
+}
+
 async function connect(kind) {
   try {
     const d = await Device.connect(kind);
-    state.device = d;
-    d.onEvent = onDeviceEvent;
-    d.onClose = () => { state.device = null; setConn(); toast('Keypad disconnected'); };
-    setConn();
-    toast(`Connected to ${d.info.board} over ${kind === 'usb' ? 'USB' : 'Bluetooth'}`);
+    await attach(d);
+    const newer = state.latest?.version && cmpVer(state.latest.version, d.info.fw) > 0;
+    toast(`Connected to ${d.info.board} over ${kind === 'usb' ? 'USB' : 'Bluetooth'}` +
+      (newer ? `\nFirmware ${state.latest.version} is available - see the Keypad tab.` : ''));
   } catch (e) {
     if (e.name !== 'NotFoundError') toast(`Could not connect: ${e.message}`, true);
   }
@@ -840,6 +919,7 @@ function wire() {
     window.open('flasher.html', '_blank');
   };
   $('dReboot').onclick = () => state.device?.rpc('reboot').catch(() => {});
+  $('fwUpdate').onclick = updateFirmware;
 
   window.addEventListener('beforeunload', (e) => { if (state.unsaved && state.device) { e.preventDefault(); e.returnValue = ''; } });
 }
@@ -880,6 +960,7 @@ async function init() {
   setProject(saved || defaultProject());
   state.unsaved = false;
   requestAnimationFrame(frame);
+  loadLatest();
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 

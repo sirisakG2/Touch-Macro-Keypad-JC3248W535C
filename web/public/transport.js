@@ -51,8 +51,8 @@ export class SerialLink extends LineLink {
   kind = 'usb';
   chunk = 3072;   // bytes of file data per wchunk
   static supported() { return 'serial' in navigator; }
-  async open() {
-    this.port = await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x303a }] });
+  async open(port) {
+    this.port = port || await navigator.serial.requestPort({ filters: [{ usbVendorId: 0x303a }] });
     await this.port.open({ baudRate: 115200, bufferSize: 65536 });
     await this.port.setSignals?.({ dataTerminalReady: true }).catch(() => {});
     this.writer = this.port.writable.getWriter();
@@ -122,9 +122,10 @@ export class Device {
       this.onClose?.();
     };
   }
-  static async connect(kind) {
+  // port: a previously granted Web Serial port to reopen without the picker (after a reboot).
+  static async connect(kind, port) {
     const link = kind === 'ble' ? new BleLink() : new SerialLink();
-    await link.open();
+    await link.open(port);
     const dev = new Device(link);
     dev.info = await dev.rpc('hello', {}, 3000).catch(async () => dev.rpc('hello', {}, 3000));
     return dev;
@@ -173,6 +174,17 @@ export class Device {
     let o = 0;
     for (const p of parts) { out.set(p, o); o += p.length; }
     return out;
+  }
+  // Firmware update over USB: the keypad writes the image to its spare app slot, verifies it and reboots.
+  async updateFirmware(bytes, onProgress) {
+    if (this.kind !== 'usb') throw new Error('connect over USB to update the firmware');
+    await this.rpc('ota_begin', { size: bytes.length }, 20000);   // erases the slot
+    for (let off = 0; off < bytes.length; off += this.link.chunk) {
+      const part = bytes.subarray(off, off + this.link.chunk);
+      await this.rpc('ota_chunk', { off, data: toB64(part) }, 15000);
+      onProgress?.(Math.min(off + part.length, bytes.length), bytes.length);
+    }
+    await this.rpc('ota_end', { crc: crc32(bytes) }, 20000);
   }
   remove(name) { return this.rpc('rm', { name }); }
   apply() { return this.rpc('apply', {}, 15000); }

@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <FS.h>
 #include <LittleFS.h>
+#include <Preferences.h>
 #include "config.h"
 #include "display.h"
 #include "hid_out.h"
@@ -32,6 +33,15 @@ void setup() {
   displayBegin();
   splash();
   uint32_t splashT = millis();
+  // Storage layout 2 (since 1.3.0: two OTA app slots, LittleFS at 0x610000). Format once after the
+  // partition table changes so leftovers of the old layout can never be mounted.
+  Preferences prefs;
+  prefs.begin("keypad", false);
+  if (prefs.getUChar("fslayout", 0) != 2) {
+    LittleFS.format();
+    prefs.putUChar("fslayout", 2);
+  }
+  prefs.end();
   if (!LittleFS.begin(true)) {   // formats on first boot
     gfx->setTextSize(2);
     gfx->setTextColor(RGB565_RED);

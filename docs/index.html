@@ -82,15 +82,15 @@
     <tr><td><code>ui</code></td><td>Pages, keys, press motion, light effects, idle ambience, status and page bars, dimming</td></tr>
     <tr><td><code>hid_out</code></td><td>USB HID (TinyUSB) or BLE HID (NimBLE 2.x) routing; BLE Nordic-UART config channel</td></tr>
     <tr><td><code>macro</code></td><td>Background task: combos, ASCII text (US layout), pauses, raw key down/up</td></tr>
-    <tr><td><code>proto</code></td><td>Line-JSON protocol: <code>hello ls read wbegin wchunk wend rm apply run page bright bootloader reboot</code></td></tr>
-    <tr><td><code>config</code></td><td><code>/config.json</code> on LittleFS (12.9 MB partition); built-in two-page default</td></tr>
+    <tr><td><code>proto</code></td><td>Line-JSON protocol: <code>hello ls read wbegin wchunk wend rm apply run page bright ota_begin ota_chunk ota_end bootloader reboot</code></td></tr>
+    <tr><td><code>config</code></td><td><code>/config.json</code> on LittleFS (9.9 MB partition); built-in two-page default</td></tr>
   </table>
   <h3>Flash layout</h3>
   <table>
     <tr><th>Partition</th><th>Offset</th><th>Size</th></tr>
     <tr><td>nvs / otadata</td><td>0x9000 / 0xE000</td><td>20 KB / 8 KB</td></tr>
-    <tr><td>app0</td><td>0x10000</td><td>3 MB</td></tr>
-    <tr><td>spiffs (LittleFS: config, project, images)</td><td>0x310000</td><td>12.9 MB</td></tr>
+    <tr><td>app0 / app1 (two slots for updates from the studio)</td><td>0x10000 / 0x310000</td><td>3 MB each</td></tr>
+    <tr><td>spiffs (LittleFS: config, project, images)</td><td>0x610000</td><td>9.9 MB</td></tr>
     <tr><td>coredump</td><td>0xFF0000</td><td>64 KB</td></tr>
   </table>
 

@@ -42,6 +42,7 @@ The keypad types over **USB** when a PC has enumerated it. Otherwise it types ov
    - Over Bluetooth, Save sends only the layout and macros.
 4. Plug the keypad into a PC and it types over USB. On a charger or battery it advertises over Bluetooth as **Macro Keypad**, so pair it like any keyboard.
 5. Keep the studio open, or install it as an app from the address bar, to hear the click sound on the PC's speakers.
+6. **Updating later:** connect over USB and click **Keypad → Update firmware**. The keypad installs the new version into its spare app slot, checks it and restarts by itself, with no BOOT button. This works from firmware 1.3.0 on; older keypads need one install from the Firmware page first, and then **Save to keypad** again.
 
 Text macros type with the **US keyboard layout**, and the device's fallback font is ASCII only. Keycap labels can use any language or emoji, because the studio renders them into images.
 

@@ -40,6 +40,8 @@ VERSION=$(sed -n 's/.*-DFW_VERSION=\\"\([^\\]*\)\\".*/\1/p' firmware/platformio.
 BUILT=$(date -u +%Y-%m-%dT%H:%MZ)
 mkdir -p web/public/fw
 cp firmware/.pio/build/keypad/firmware.factory.bin web/public/fw/keypad-factory.bin
+cp firmware/.pio/build/keypad/firmware.bin web/public/fw/keypad-app.bin   # for updates from the studio (OTA)
+APP_SIZE=$(wc -c < web/public/fw/keypad-app.bin | tr -d ' ')
 cat > web/public/fw/manifest.json <<JSON
 {
   "name": "Touch Macro Keypad",
@@ -48,6 +50,7 @@ cat > web/public/fw/manifest.json <<JSON
   "source": "${SOURCE}",
   "new_install_prompt_erase": false,
   "new_install_improv_wait_time": 0,
+  "app": { "path": "keypad-app.bin", "size": ${APP_SIZE} },
   "builds": [
     { "chipFamily": "ESP32-S3", "parts": [{ "path": "keypad-factory.bin", "offset": 0 }] }
   ]

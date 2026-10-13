@@ -30,6 +30,17 @@ class FakeKeypad {
         Object.assign(res, { size: f.length, n: part.length, data: toB64(part) });
         break;
       }
+      case 'ota_begin': this.ota = { size: req.size, done: 0, crc: 0 }; break;
+      case 'ota_chunk': {
+        if (req.off !== this.ota.done) { fail('offset'); break; }
+        const b = fromB64(req.data);
+        this.ota.done += b.length; this.ota.crc = crc32(b, this.ota.crc);
+        break;
+      }
+      case 'ota_end':
+        if (req.crc !== this.ota.crc || this.ota.done !== this.ota.size) fail('crc mismatch');
+        else this.rebooted = true;
+        break;
       case 'ls': res.files = [...this.files].map(([n, b]) => ({ n, s: b.length })); break;
       default: fail('unknown cmd');
     }
@@ -51,4 +62,20 @@ test('writeFile/readFile round trip with chunking and CRC', async () => {
 test('device errors reject the rpc', async () => {
   const dev = new Device(new FakeKeypad());
   await assert.rejects(dev.rpc('nope'), /unknown cmd/);
+});
+
+test('updateFirmware streams the image with offsets and a matching CRC', async () => {
+  const link = new FakeKeypad();
+  const dev = new Device(link);
+  const img = new Uint8Array(10_000).map((_, i) => (i * 13) & 255);
+  let last = 0;
+  await dev.updateFirmware(img, (a) => (last = a));
+  assert.equal(last, img.length);
+  assert.equal(link.rebooted, true);
+});
+
+test('updateFirmware refuses Bluetooth', async () => {
+  const link = new FakeKeypad();
+  link.kind = 'ble';
+  await assert.rejects(new Device(link).updateFirmware(new Uint8Array(4)), /USB/);
 });
