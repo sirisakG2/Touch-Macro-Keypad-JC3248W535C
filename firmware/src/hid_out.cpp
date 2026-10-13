@@ -1,12 +1,12 @@
 #include "hid_out.h"
 #include "USB.h"
 #include "USBHIDKeyboard.h"
+#include "esp32-hal-tinyusb.h"   // tud_suspended()
 #include <NimBLEDevice.h>
 #include <NimBLEHIDDevice.h>
 #include <freertos/stream_buffer.h>
 
 static USBHIDKeyboard usbKbd;
-static volatile bool usbMounted = false, usbSuspended = false;
 
 static NimBLEServer *bleServer;
 static NimBLEHIDDevice *bleHid;
@@ -31,16 +31,6 @@ static const uint8_t REPORT_MAP[] = {
   0xC0,
 };
 
-static void onUsbEvent(void *, esp_event_base_t base, int32_t id, void *) {
-  if (base != ARDUINO_USB_EVENTS) return;
-  switch (id) {
-    case ARDUINO_USB_STARTED_EVENT: usbMounted = true; usbSuspended = false; break;
-    case ARDUINO_USB_STOPPED_EVENT: usbMounted = false; break;
-    case ARDUINO_USB_SUSPEND_EVENT: usbSuspended = true; break;
-    case ARDUINO_USB_RESUME_EVENT:  usbSuspended = false; break;
-  }
-}
-
 class ServerCb : public NimBLEServerCallbacks {
   void onConnect(NimBLEServer *, NimBLEConnInfo &) override { bleConnected = true; bleAdvertising = false; }
   void onDisconnect(NimBLEServer *, NimBLEConnInfo &, int) override {
@@ -63,7 +53,6 @@ class TxCb : public NimBLECharacteristicCallbacks {
 };
 
 void hidBegin(const char *name) {
-  USB.onEvent(onUsbEvent);
   USB.productName("Touch Macro Keypad");
   USB.manufacturerName("JC3248W535C");
   usbKbd.begin();
@@ -100,7 +89,10 @@ void hidBegin(const char *name) {
   adv->enableScanResponse(true);
 }
 
-bool hidUsbReady() { return usbMounted && !usbSuspended && (bool)USB; }
+// Ask the USB stack directly. (Up to 1.3.3 this relied on USB events, but the core starts USB before
+// setup() runs, so the "started" event fired before we listened and USB never counted as ready:
+// "Typing via: NONE" and keystrokes were dropped.)
+bool hidUsbReady() { return (bool)USB && !tud_suspended(); }
 
 void hidLoop() {
   // USB wins when a host has enumerated us; give it 2.5 s after boot before falling back to BLE.

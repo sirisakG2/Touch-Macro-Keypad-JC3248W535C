@@ -60,26 +60,29 @@ export class SerialLink extends LineLink {
     await this.port.open({ baudRate: 115200, bufferSize: 65536 });
     await this.port.setSignals?.({ dataTerminalReady: true }).catch(() => {});
     this.writer = this.port.writable.getWriter();
-    this._readLoop();
+    this._loop = this._readLoop();
   }
   async _readLoop() {
     const dec = new TextDecoder();
     try {
-      while (this.port.readable) {
-        this.reader = this.port.readable.getReader();
-        for (;;) {
-          const { value, done } = await this.reader.read();
-          if (done) break;
-          this._feed(dec.decode(value, { stream: true }));
-        }
-        this.reader.releaseLock();
+      // One reader for the life of the connection. `done` means the stream was cancelled or closed:
+      // stop. (Re-acquiring a reader on a closed stream returned `done` instantly and spun forever,
+      // freezing the page when the keypad restarted after a firmware update.)
+      this.reader = this.port.readable.getReader();
+      for (;;) {
+        const { value, done } = await this.reader.read();
+        if (done) break;
+        this._feed(dec.decode(value, { stream: true }));
       }
     } catch (e) { /* device unplugged */ }
+    try { this.reader?.releaseLock(); } catch {}
     this.onClose?.();
   }
   async send(line) { await this.writer.write(new TextEncoder().encode(line + '\n')); }
   async close() {
+    this.closing = true;
     try { await this.reader?.cancel(); } catch {}
+    try { await this._loop; } catch {}   // wait until the reader lock is released
     try { this.writer?.releaseLock(); } catch {}
     try { await this.port?.close(); } catch {}
   }
