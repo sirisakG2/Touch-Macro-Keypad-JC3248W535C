@@ -20,7 +20,7 @@ struct KeyAnim {
   int16_t rx = 0, ry = 0;   // ripple origin
 };
 
-enum : uint8_t { EV_PRESS, EV_RELEASE, EV_WAKE, EV_NAV };
+enum : uint8_t { EV_PRESS, EV_RELEASE, EV_WAKE, EV_NAV, EV_INFO };
 struct TouchEv { uint8_t type; int8_t dir; int16_t key, x, y, page; uint32_t t; };
 
 static SemaphoreHandle_t lock;          // guards cfg / page while the touch task hit-tests
@@ -272,16 +272,23 @@ static void touchPressed(int x, int y, uint32_t now) {
 }
 
 // Touch: act on press; release after >= 6 consecutive empty reads (the controller drops out while held).
+// Holding the top status bar for 1.5 s shows the firmware version.
 static void touchTask(void *) {
-  bool down = false;
-  int empty = 0;
+  bool down = false, infoSent = false;
+  int empty = 0, downY = 0;
+  uint32_t downT = 0;
   for (;;) {
     int x, y;
     uint32_t now = millis();
     if (touchRead(x, y)) {
       empty = 0;
       lastTouch = now;
-      if (!down) { down = true; touchPressed(x, y, now); }
+      if (!down) { down = true; infoSent = false; downT = now; downY = y; touchPressed(x, y, now); }
+      else if (!infoSent && downY < STATUS_H + 8 && y < STATUS_H + 30 && now - downT >= 1500) {
+        infoSent = true;
+        TouchEv ev = {EV_INFO, 0, -1, 0, 0, 0, now};
+        xQueueSend(touchQ, &ev, 0);
+      }
     } else if (down && ++empty >= 6) {
       down = false;
       TouchEv ev = {EV_RELEASE, 0, -1, 0, 0, 0, now};
@@ -309,6 +316,13 @@ static void handleTouchEvents() {
       case EV_WAKE: dimmed = false; applyBrightness(); needFrame = true; break;
       case EV_NAV: uiSetPage((page + cfg.pages.size() + ev.dir) % cfg.pages.size()); break;
       case EV_RELEASE: releaseAll(ev.t); break;
+      case EV_INFO: {
+        static String info;
+        Link l = hidLink();
+        info = String("v") + FW_VERSION + (l == LINK_USB ? " USB" : l == LINK_BLE ? " BLE" : "");
+        uiMessage(info.c_str());
+        break;
+      }
       case EV_PRESS: {
         if (ev.page != page || ev.key < 0 || ev.key >= (int)anims.size()) break;
         KeyAnim &a = anims[ev.key];
