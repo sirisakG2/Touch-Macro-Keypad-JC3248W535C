@@ -370,6 +370,7 @@ void uiApplyConfig(const Config &c) {
 
 void uiReload() {
   if (lock) xSemaphoreTake(lock, portMAX_DELAY);
+  displaySetRotation(cfg.rotation);   // orientation chosen in the studio
   if (page >= (int)cfg.pages.size()) page = 0;
   loadPageAssets();
   if (lock) xSemaphoreGive(lock);

@@ -48,6 +48,7 @@ struct Config {
   String name = "Macro Keypad";
   uint8_t brightness = 80;      // %
   bool statusBar = true;
+  uint8_t rotation = 0;         // 0 portrait, 1 landscape (left), 2 portrait flipped, 3 landscape (right)
   uint16_t dimAfter = 120;      // s, 0 = never
   uint8_t dimLevel = 10;        // %
   Idle idle = ID_BREATHE;

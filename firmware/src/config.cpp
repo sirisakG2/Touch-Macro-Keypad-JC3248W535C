@@ -108,6 +108,7 @@ String parseConfig(const char *json, size_t len, Config &out) {
   out.name = doc["name"] | "Macro Keypad";
   out.brightness = constrain(doc["brightness"] | 80, 5, 100);
   out.statusBar = doc["statusBar"] | true;
+  out.rotation = (doc["rotation"] | 0) & 3;
   out.dimAfter = doc["dim"]["after"] | 120;
   out.dimLevel = constrain(doc["dim"]["level"] | 10, 0, 100);
   out.idle = parseIdle(doc["idle"]["effect"] | "breathe");
@@ -131,7 +132,7 @@ String parseConfig(const char *json, size_t len, Config &out) {
     for (JsonObjectConst k : keys) {
       KeyDef kd;
       kd.x = k["x"] | 0; kd.y = k["y"] | 0;
-      kd.w = constrain(k["w"] | 80, 8, 320); kd.h = constrain(k["h"] | 80, 8, 480);
+      kd.w = constrain(k["w"] | 80, 8, 480); kd.h = constrain(k["h"] | 80, 8, 480);
       kd.r = constrain(k["r"] | 12, 0, 80);
       kd.color = hexTo565(k["color"] | "", 0x2945);
       kd.textColor = hexTo565(k["text"] | "", 0xFFFF);

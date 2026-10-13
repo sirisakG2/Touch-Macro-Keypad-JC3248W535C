@@ -119,6 +119,8 @@
           <label>Text <input id="kText" type="color"></label>
           <label>Position <select id="kLabelPos"><option value="">Auto</option><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option></select></label>
         </div>
+        <label>Text transparency <span class="val" id="kTextTVal">0%</span><input id="kTextT" type="range" min="0" max="100" step="5"></label>
+        <div class="applyrow"><span>Apply text style to</span><button class="btn sm" data-apply="text" data-scope="page">This page</button><button class="btn sm" data-apply="text" data-scope="all">All pages</button></div>
         <h3>Keycap</h3>
         <div class="styles" id="kStyle"></div>
         <div class="row">
@@ -131,6 +133,7 @@
         <div class="row wrap"><button id="kImgPick" class="btn sm">Choose picture…</button><button id="kImgClear" class="btn sm ghost">Remove</button><button id="kImgPage" class="btn sm ghost" hidden>Use page picture</button></div>
         <label>Picture fit <select id="kImgFit"><option value="cover">Fill keycap</option><option value="contain">Fit inside</option><option value="icon">Icon above label</option></select></label>
         <input id="kImgFile" type="file" accept="image/*" hidden>
+        <div class="applyrow"><span>Apply keycap &amp; picture layout to</span><button class="btn sm" data-apply="layout" data-scope="page">This page</button><button class="btn sm" data-apply="layout" data-scope="all">All pages</button></div>
         <h3>Position</h3>
         <div class="grid4">
           <label>X <input id="kX" type="number" min="0" max="320"></label>
@@ -180,6 +183,8 @@
 
     <div class="tab" data-tab="device" hidden>
       <label>Keypad name <input id="dName" maxlength="24"></label>
+      <label>Screen orientation <select id="dRotation"></select></label>
+      <p class="hint">This board has no gyro/tilt sensor, so choose the orientation here. Keys are rescaled to fit; use <i>Arrange keys in grid</i> to tidy up.</p>
       <label>Brightness <input id="dBright" type="range" min="5" max="100"></label>
       <label class="check"><input id="dStatus" type="checkbox"> Show top status bar</label>
       <div class="row">

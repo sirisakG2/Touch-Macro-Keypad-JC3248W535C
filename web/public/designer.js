@@ -1,6 +1,6 @@
 // Renders keycaps and page backgrounds exactly as the keypad will show them, packs them into the
 // firmware's .565 image format, and compiles the editable project into the device config.
-import { SCREEN } from './schema.js';
+import { SCREEN, setOrientation } from './schema.js';
 
 export const STYLES = ['flat', '3d', 'glass', 'outline', 'neon', 'image'];
 export const FONTS = ['system-ui', 'Arial', 'Georgia', 'Courier New', 'Impact', 'Trebuchet MS', 'Verdana', 'monospace'];
@@ -111,6 +111,7 @@ export async function drawCap(ctx, key, mosaic = null) {
     const px = key.fontPx || 20;
     ctx.font = `${key.fontWeight || 700} ${px}px ${key.font || 'system-ui'}`;
     ctx.fillStyle = key.text || '#ffffff';
+    ctx.globalAlpha = Math.max(0, Math.min(100, key.textOpacity ?? 100)) / 100;   // label transparency
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if (style === 'neon') { ctx.shadowColor = key.text || c; ctx.shadowBlur = 8; }
@@ -202,6 +203,7 @@ export const designHash = (project) => fnv1a(new TextEncoder().encode(JSON.strin
 // Project -> { config (device JSON), files: Map(path -> Uint8Array) }.
 // Keycaps are always rendered into images so fonts/emoji/styles look the same on the device.
 export async function compileProject(project) {
+  setOrientation(project.rotation || 0);
   const files = new Map();
   const pages = [];
   for (const p of project.pages) {
@@ -234,7 +236,7 @@ export async function compileProject(project) {
   }
   const config = {
     v: 1, design: designHash(project), name: asciiLabel(project.name) || 'Macro Keypad', brightness: project.brightness ?? 80,
-    statusBar: project.statusBar !== false, dim: project.dim, idle: project.idle, pages,
+    statusBar: project.statusBar !== false, dim: project.dim, idle: project.idle, rotation: project.rotation || 0, pages,
   };
   return { config, files };
 }

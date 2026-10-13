@@ -25,3 +25,17 @@ test('action validation', () => {
   assert.match(validateAction({ t: 'combo' }), /empty/);
   assert.match(validateAction({ t: 'wiggle' }), /unknown action/);
 });
+
+test('orientation: screen size and bounds follow the rotation', async () => {
+  const { screenFor, setOrientation, SCREEN } = await import('../public/schema.js');
+  assert.deepEqual(screenFor(0), { w: 320, h: 480 });
+  assert.deepEqual(screenFor(1), { w: 480, h: 320 });
+  assert.deepEqual(screenFor(3), { w: 480, h: 320 });
+  setOrientation(1);
+  assert.equal(SCREEN.w, 480);
+  setOrientation(0);
+  const wide = { pages: [{ name: 'P', keys: [{ x: 10, y: 30, w: 400, h: 80, actions: [] }] }] };
+  assert.match(validateConfig(wide).join(), /outside the 320x480/);
+  assert.deepEqual(validateConfig({ ...wide, rotation: 1 }), []);
+  assert.match(validateConfig({ ...wide, rotation: 7 }).join(), /rotation/);
+});

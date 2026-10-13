@@ -1,6 +1,6 @@
 // Macro Keypad Studio - main controller.
 import { KEYS, MODS, codeToKey, comboText, prettyKey } from './keys.js';
-import { SCREEN, MOTIONS, LIGHTS, IDLES, validateConfig } from './schema.js';
+import { SCREEN, MOTIONS, LIGHTS, IDLES, ORIENTATIONS, setOrientation, screenFor, validateConfig } from './schema.js';
 import { Device, SerialLink, BleLink } from './transport.js';
 import { STYLES, FONTS, compileProject, designHash, drawCap, renderCapCanvas, renderBgCanvas, renderMosaic, importImage, asciiLabel } from './designer.js';
 import { Preview } from './fx.js';
@@ -15,7 +15,7 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 function newKey(over = {}) {
   return {
     id: uid(), x: 10, y: 32, w: 96, h: 90, r: 14, label: 'Key', font: 'system-ui', fontPx: 20, fontWeight: 700,
-    text: '#ffffff', labelPos: '', style: '3d', color: '#2f6fed', image: null, imageFit: 'cover',
+    text: '#ffffff', textOpacity: 100, labelPos: '', style: '3d', color: '#2f6fed', image: null, imageFit: 'cover',
     motion: 'push', light: 'glow', fx: '#00e5ff', ms: 260, sound: '', actions: [], ...over,
   };
 }
@@ -157,7 +157,7 @@ async function refreshVisuals() {
   if (kpSig !== state.kpSig) { state.kpSig = kpSig; state.mosaic = await renderMosaic(page); }
   const mosaic = state.mosaic;
   // keys that show a slice of the page picture depend on where they sit
-  const sigs = page.keys.map((k) => JSON.stringify([k.w, k.h, k.r, k.label, k.font, k.fontPx, k.fontWeight, k.text, k.labelPos, k.style, k.color, k.image, k.imageFit,
+  const sigs = page.keys.map((k) => JSON.stringify([k.w, k.h, k.r, k.label, k.font, k.fontPx, k.fontWeight, k.text, k.textOpacity, k.labelPos, k.style, k.color, k.image, k.imageFit,
     mosaic && !k.image ? [kpSig.length, kpSig.slice(-64), k.x, k.y] : 0]));
   const caps = [];
   for (let i = 0; i < page.keys.length; i++) {
@@ -220,6 +220,8 @@ function renderKeyForm() {
   $('kWeight').value = String(k.fontWeight);
   $('kText').value = k.text;
   $('kLabelPos').value = k.labelPos || '';
+  $('kTextT').value = 100 - (k.textOpacity ?? 100);
+  $('kTextTVal').textContent = `${100 - (k.textOpacity ?? 100)}%`;
   $('kColor').value = k.color;
   $('kRadius').value = k.r;
   $('kImgFit').value = k.imageFit || 'cover';
@@ -272,6 +274,9 @@ function fillSoundSelect(sel, perKey) {
 function renderDevice() {
   const p = state.project;
   $('dName').value = p.name;
+  const rot = $('dRotation');
+  if (!rot.options.length) for (const o of ORIENTATIONS) rot.add(new Option(o.label, o.v));
+  rot.value = String(p.rotation || 0);
   $('dBright').value = p.brightness;
   $('dStatus').checked = p.statusBar !== false;
   $('dDimAfter').value = p.dim.after;
@@ -701,6 +706,8 @@ async function saveToDevice() {
     const { config, files } = await compileProject(state.project);
     const errs = validateConfig(config);
     if (errs.length) throw new Error(errs.slice(0, 6).join('\n'));
+    if (config.rotation && cmpVer(d.info.fw, '1.4.0') < 0)
+      throw new Error('this orientation needs keypad firmware 1.4.0 or newer - open the Keypad tab and click Update first');
     const cfgBytes = new TextEncoder().encode(JSON.stringify(config));
     if (d.kind === 'ble') {
       progress('Sending layout over Bluetooth…', 0.2);
@@ -922,6 +929,31 @@ function wire() {
   kset('fontWeight', Number, 'change')('kWeight');
   kset('text')('kText');
   kset('labelPos', String, 'change')('kLabelPos');
+  bindInput('kTextT', (t) => {
+    const k = curKey();
+    if (!k) return;
+    k.textOpacity = 100 - +t.value;
+    $('kTextTVal').textContent = `${t.value}%`;
+    changed();
+  });
+
+  // "Apply to ..." buttons: copy the selected key's text style or keycap/picture layout to other keys
+  const APPLY = {
+    text: { fields: ['font', 'fontPx', 'fontWeight', 'text', 'textOpacity', 'labelPos'], what: 'text style' },
+    layout: { fields: ['style', 'r', 'imageFit'], what: 'keycap & picture layout' },
+  };
+  for (const b of document.querySelectorAll('[data-apply]')) {
+    b.onclick = () => {
+      const k = curKey();
+      if (!k) return;
+      const { fields, what } = APPLY[b.dataset.apply];
+      const pages = b.dataset.scope === 'all' ? state.project.pages : [curPage()];
+      let n = 0;
+      for (const pg of pages) for (const o of pg.keys) { if (o === k) continue; for (const f of fields) o[f] = k[f]; n++; }
+      changed({ panels: true });
+      toast(`Applied ${what} to ${n} key${n === 1 ? '' : 's'}${b.dataset.scope === 'all' ? ' on all pages' : ' on this page'}.`);
+    };
+  }
   kset('color')('kColor');
   kset('r', Number)('kRadius');
   kset('imageFit', String, 'change')('kImgFit');
@@ -980,6 +1012,7 @@ function wire() {
 
   // device tab
   bindInput('dName', (t) => { state.project.name = t.value; changed({ visuals: false }); });
+  bindInput('dRotation', (t) => setRotation(+t.value), 'change');
   bindInput('dBright', (t) => {
     state.project.brightness = +t.value;
     changed({ visuals: false });
@@ -1027,12 +1060,41 @@ function setMode(m) {
     : 'Tap keys to see the motion, light and click sound. Use the page bar to switch pages.';
 }
 
+// Size the preview for the current orientation.
+function applyOrientation() {
+  setOrientation(state.project.rotation || 0);
+  const c = $('screen');
+  if (c.width !== SCREEN.w || c.height !== SCREEN.h) { c.width = SCREEN.w; c.height = SCREEN.h; }
+  document.body.classList.toggle('landscape', SCREEN.w > SCREEN.h);
+}
+
+// Change orientation: rescale every key proportionally so the layout fits the new screen.
+function setRotation(rotation) {
+  const from = screenFor(state.project.rotation || 0), to = screenFor(rotation);
+  state.project.rotation = rotation;
+  if (from.w !== to.w) {
+    const sx = to.w / from.w, sy = to.h / from.h;
+    for (const pg of state.project.pages) for (const k of pg.keys) {
+      k.w = Math.max(16, Math.min(to.w, Math.round(k.w * sx)));
+      k.h = Math.max(16, Math.min(to.h, Math.round(k.h * sy)));
+      k.x = Math.max(0, Math.min(to.w - k.w, Math.round(k.x * sx)));
+      k.y = Math.max(0, Math.min(to.h - k.h, Math.round(k.y * sy)));
+    }
+    toast('Keys were rescaled for the new orientation. Use "Arrange keys in grid" to tidy them up.');
+  }
+  applyOrientation();
+  state.capSig = []; state.bgSig = ''; state.kpSig = null;
+  changed({ panels: true });
+}
+
 function setProject(p) {
   // fill gaps from older files
   const d = defaultProject();
   p.dim ??= d.dim; p.idle ??= d.idle; p.sound ??= d.sound;
   for (const pg of p.pages) { pg.id ??= uid(); pg.bg ??= { type: 'color', color: '#101018' }; pg.keys = pg.keys.map((k) => newKey(k)); }
+  p.rotation ??= 0;
   state.project = p;
+  applyOrientation();
   state.page = 0;
   state.key = p.pages[0].keys.length ? 0 : -1;
   state.capSig = []; state.bgSig = ''; state.kpSig = null;
