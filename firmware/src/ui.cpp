@@ -157,6 +157,11 @@ static void drawStatus(uint16_t *fb) {
   String t = cfg.pages[page].name;
   if (t.length() > 14) t = t.substring(0, 14);
   gfx->print(t);
+  gfx->setTextSize(1);                      // small firmware version after the page name
+  gfx->setTextColor(0x8C71);
+  gfx->setCursor(6 + t.length() * 12 + 6, 10);
+  gfx->print("v" FW_VERSION);
+  gfx->setTextSize(2);
   const char *ls; uint16_t lc;
   Link l = hidLink();
   if (l == LINK_USB) { ls = "USB"; lc = 0x07E0; }
