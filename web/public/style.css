@@ -9,6 +9,11 @@
     color-scheme: light;
   }
 }
+:root[data-theme="light"] {
+  --bg: #f3f4fa; --panel: #ffffff; --panel2: #eef0f8; --line: #d7dbea; --text: #1b1e2e; --muted: #5e6481;
+  color-scheme: light;
+}
+.theme-btn { min-width: 84px; justify-content: center; }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }

@@ -5,7 +5,8 @@ A 3.5" touchscreen **macro keypad** built on the Guition **JC3248W535C** (ESP32-
 | | |
 |---|---|
 | **Open the studio** | https://touch-macro-keypad-jc3248w535c.sirisak-anotai.workers.dev |
-| **User guide** (install, use, update, troubleshooting) | [online](https://touch-macro-keypad-jc3248w535c.sirisak-anotai.workers.dev/guide.html) · [`web/public/guide.html`](web/public/guide.html) |
+| **User guide – English** (install, use, update, troubleshooting) | [online](https://touch-macro-keypad-jc3248w535c.sirisak-anotai.workers.dev/guide.html) · [`web/public/guide.html`](web/public/guide.html) |
+| **คู่มือการใช้งาน – ภาษาไทย** | [ออนไลน์](https://touch-macro-keypad-jc3248w535c.sirisak-anotai.workers.dev/guide-th.html) · [`web/public/guide-th.html`](web/public/guide-th.html) |
 | **Install firmware in the browser** | [Firmware page](https://touch-macro-keypad-jc3248w535c.sirisak-anotai.workers.dev/flasher.html) |
 | **Product specification** | [`docs/index.html`](docs/index.html) |
 | **Hardware notes** | [`docs/hardware-notes.md`](docs/hardware-notes.md) |
@@ -32,6 +33,7 @@ A 3.5" touchscreen **macro keypad** built on the Guition **JC3248W535C** (ESP32-
 - **Click sound on the PC's speakers.** Built-in sounds or your own, set per key.
 - **One-click firmware updates** from the studio over USB, installed in place (OTA) with no BOOT button.
 - **Unsaved-changes indicator.** The Save button shows an orange dot until the keypad has your exact design.
+- **Light / dark mode** button on every page (Auto follows the system), and a user guide in **English and Thai**.
 
 ## Hardware
 
@@ -69,7 +71,7 @@ The [user guide](https://touch-macro-keypad-jc3248w535c.sirisak-anotai.workers.d
 | `firmware/src/macro.*` | Macro runner (combos, text, pauses, raw key down/up) |
 | `firmware/src/proto.*` | Line-JSON protocol: files, apply, run, OTA update, reboot |
 | `firmware/src/config.*` | `/config.json` parser and built-in default layout |
-| `web/public/` | The studio: static ES modules, no build step. `guide.html` and `flasher.html` live here too |
+| `web/public/` | The studio: static ES modules, no build step. `guide.html` (English), `guide-th.html` (Thai), `flasher.html` and `theme.js` (light/dark) live here too |
 | `web/public/icons/lucide.json` | Generated icon data (`npm run icons`) |
 | `web/public/fw/` | Committed firmware build plus ESP Web Tools manifest, served to the flasher and the studio |
 | `web/src/worker.js` | Cloudflare Worker: serves the assets plus `/api/version` |

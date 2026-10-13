@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>คู่มือคีย์แพด</title>
+<meta name="description" content="วิธีติดตั้ง ออกแบบ ใช้งาน และอัปเดตคีย์แพดมาโครจอสัมผัส JC3248W535C และ Macro Keypad Studio">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<script src="theme.js"></script>
+<link rel="stylesheet" href="style.css">
+<style>
+  .guide { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 28px; max-width: 1100px; margin: 0 auto; padding: 20px 16px 80px; }
+  .toc { position: sticky; top: 76px; align-self: start; font-size: 13px; }
+  .toc ol { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: block; padding: 5px 10px; border-radius: 7px; color: var(--muted); text-decoration: none; }
+  .toc a:hover { background: var(--panel2); color: var(--text); }
+  article { min-width: 0; line-height: 1.75; font-size: 15px; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans Thai", Sarabun, Thonburi, "Leelawadee UI", sans-serif; }
+  article h1 { font-size: 28px; margin: 0 0 6px; }
+  article .lead { color: var(--muted); font-size: 16px; margin: 0 0 18px; }
+  article section { scroll-margin-top: 80px; border-top: 1px solid var(--line); padding-top: 18px; margin-top: 26px; }
+  article h2 { font-size: 20px; text-transform: none; letter-spacing: 0; color: var(--text); margin: 0 0 10px; }
+  article h3 { font-size: 15px; color: var(--text); margin: 18px 0 6px; }
+  article ol, article ul { padding-left: 22px; }
+  article li { margin: 4px 0; }
+  article code, article kbd { background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; font-size: 13px; }
+  article kbd { font-family: inherit; }
+  article a { color: var(--accent); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 12px 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .card b { display: block; margin-bottom: 2px; }
+  .note { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 14px; margin: 12px 0; }
+  .note.warn { border-left-color: #f0a020; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 10px 0; display: block; overflow-x: auto; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .seg.lang a { padding: 6px 12px; text-decoration: none; color: var(--text); background: var(--panel2); border-right: 1px solid var(--line); }
+  .seg.lang a:last-child { border-right: 0; }
+  .seg.lang a.on { background: var(--accent); color: #fff; }
+  .cta { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0 4px; }
+  details { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  @media (max-width: 860px) { .guide { grid-template-columns: 1fr; } .toc { position: static; } .toc ol { flex-direction: row; flex-wrap: wrap; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><img src="icons/icon.svg" alt="" width="28" height="28"><span>คู่มือการใช้งานคีย์แพด</span><small id="appVer" class="ver" hidden></small></div>
+  <div class="actions"><span class="seg lang"><a href="guide.html" onclick="setGuideLang('en')">EN</a><a href="guide-th.html" class="on" onclick="setGuideLang('th')">ไทย</a></span><button class="btn ghost theme-btn" type="button">◐ Auto</button><a class="btn primary" href="./">เปิดสตูดิโอ</a><a class="btn ghost" href="flasher.html">Firmware</a></div>
+</header>
+
+<div class="guide">
+  <nav class="toc" aria-label="สารบัญ">
+    <ol>
+      <li><a href="#what">1. คืออะไร</a></li>
+      <li><a href="#install">2. ติดตั้งครั้งแรก</a></li>
+      <li><a href="#connect">3. การเชื่อมต่อ</a></li>
+      <li><a href="#design">4. ออกแบบปุ่ม</a></li>
+      <li><a href="#actions">5. คำสั่งและมาโคร</a></li>
+      <li><a href="#fx">6. แอนิเมชัน แสง และเสียง</a></li>
+      <li><a href="#save">7. Save กับ Update ต่างกันอย่างไร</a></li>
+      <li><a href="#update">8. อัปเดตเฟิร์มแวร์</a></li>
+      <li><a href="#trouble">9. แก้ปัญหา</a></li>
+      <li><a href="#credits">10. เครดิต</a></li>
+    </ol>
+  </nav>
+
+  <article>
+    <h1>Touch Macro Keypad</h1>
+    <p class="lead">คีย์แพดมาโครจอสัมผัส 3.5 นิ้ว สร้างจากบอร์ด Guition JC3248W535C ออกแบบทุกอย่างได้จากเว็บเบราว์เซอร์</p>
+    <div class="cta"><a class="btn primary" href="./">เปิด Macro Keypad Studio</a><a class="btn" href="flasher.html">ติดตั้งเฟิร์มแวร์</a><a class="btn ghost" href="https://github.com/sirisakG2/Touch-Macro-Keypad-JC3248W535C" target="_blank" rel="noopener">ซอร์สโค้ดบน GitHub</a></div>
+
+    <section id="what">
+      <h2>1. คืออะไร</h2>
+      <div class="cards">
+        <div class="card"><b>พิมพ์เข้าคอมพิวเตอร์ได้</b>ทำงานเป็นคีย์บอร์ด USB เมื่อเสียบกับ PC หรือ Mac และเป็นคีย์บอร์ดบลูทูธเมื่อใช้ไฟจากที่ชาร์จหรือแบตเตอรี่</div>
+        <div class="card"><b>ออกแบบในเบราว์เซอร์</b>หน้า ปุ่ม ไอคอน รูปภาพ พื้นหลัง เอฟเฟกต์ และมาโคร ทำได้ทั้งหมดใน Macro Keypad Studio</div>
+        <div class="card"><b>อัปเดตได้ในคลิกเดียว</b>เฟิร์มแวร์ใหม่ติดตั้งผ่าน USB จากสตูดิโอ แล้วคีย์แพดจะรีสตาร์ตเอง</div>
+        <div class="card"><b>เสียงคลิกบนคอมพิวเตอร์</b>สตูดิโอจะเล่นเสียงคลิกผ่านลำโพงทุกครั้งที่แตะปุ่มบนคีย์แพด</div>
+      </div>
+      <h3>สิ่งที่ต้องมี</h3>
+      <ul>
+        <li>บอร์ด Guition <b>JC3248W535C</b> (ESP32-S3 จอสัมผัส 3.5 นิ้ว 320&times;480)</li>
+        <li>สาย USB-C แบบ<b>รับส่งข้อมูลได้</b> (สายที่ชาร์จได้อย่างเดียวใช้ไม่ได้)</li>
+        <li><b>Chrome หรือ Edge บนคอมพิวเตอร์</b> (Windows, macOS, Linux, ChromeOS) เบราว์เซอร์อื่นยังสื่อสารกับอุปกรณ์ USB/บลูทูธไม่ได้</li>
+      </ul>
+    </section>
+
+    <section id="install">
+      <h2>2. ติดตั้งครั้งแรก</h2>
+      <ol>
+        <li>เสียบบอร์ดเข้ากับคอมพิวเตอร์</li>
+        <li>เปิด<a href="flasher.html">หน้า Firmware</a> แล้วกด <b>Install firmware</b></li>
+        <li>เลือกพอร์ตชื่อ <b>USB JTAG/serial debug unit</b> แล้วยืนยัน การติดตั้งใช้เวลาประมาณ 1 นาที</li>
+        <li>เมื่อเสร็จ คีย์แพดจะรีสตาร์ตและแสดง <b>Macro Keypad v…</b> ตามด้วยเลย์เอาต์เริ่มต้น</li>
+      </ol>
+      <div class="note warn"><b>ขึ้นว่า "Failed to initialize"?</b> แปลว่าบอร์ดยังไม่อยู่ในโหมดติดตั้ง ให้ถอดสาย แล้ว<b>กดปุ่ม BOOT ค้างไว้</b> (หนึ่งในปุ่มเล็ก ๆ สองปุ่มในรูด้านหลังบอร์ด) เสียบสายกลับ ปล่อยปุ่ม BOOT แล้วลองใหม่ ในโหมดนี้จอจะดับ ถือว่าปกติ ติดตั้งเสร็จแล้วกด RESET (หรือถอดเสียบสายใหม่)</div>
+      <p>หลังติดตั้งครั้งแรกแล้ว ไม่ต้องใช้ปุ่ม BOOT อีกเลย ดูหัวข้อ<a href="#update">อัปเดตเฟิร์มแวร์</a></p>
+    </section>
+
+    <section id="connect">
+      <h2>3. การเชื่อมต่อ</h2>
+      <h3>ใช้เป็นคีย์บอร์ด</h3>
+      <ul>
+        <li><b>USB:</b> เสียบเข้ากับคอมพิวเตอร์ ใช้พิมพ์ได้ทันที แถบด้านบนของคีย์แพดจะแสดง <b style="color:#29d391">USB</b></li>
+        <li><b>บลูทูธ:</b> ใช้ไฟจากที่ชาร์จหรือแบตเตอรี่ ระหว่างรอจับคู่แถบด้านบนจะแสดง <b>BLE…</b> ให้จับคู่อุปกรณ์ชื่อ <b>Macro Keypad</b> ในการตั้งค่าบลูทูธของคอมพิวเตอร์เหมือนคีย์บอร์ดทั่วไป เมื่อเชื่อมต่อแล้วจะแสดง <b style="color:#58a6ff">BLE</b></li>
+        <li><b>---</b> แปลว่ายังไม่ได้เชื่อมต่อกับอะไรเลย แตะปุ่มแล้วจะยังพิมพ์ไม่ได้</li>
+      </ul>
+      <h3>เชื่อมต่อกับสตูดิโอ</h3>
+      <ol>
+        <li>เปิด<a href="./">สตูดิโอ</a>ใน Chrome/Edge</li>
+        <li>กด <b>USB</b> (แนะนำ) หรือ <b>Bluetooth</b> ที่ด้านบน แล้วเลือกคีย์แพด</li>
+        <li>ป้ายสถานะจะเปลี่ยนเป็นสีเขียว เช่น <code>USB · fw 1.4.0</code></li>
+      </ol>
+      <p>ผ่านบลูทูธบันทึกเลย์เอาต์และมาโครได้ แต่รูปภาพ ดีไซน์ปุ่ม และการอัปเดตเฟิร์มแวร์ต้องใช้ USB</p>
+    </section>
+
+    <section id="design">
+      <h2>4. ออกแบบปุ่ม</h2>
+      <p>คลิกปุ่มบนหน้าจอจำลองในสตูดิโอเพื่อเลือก ลากเพื่อย้ายตำแหน่ง ลากมุมสีขาวเพื่อปรับขนาด โหมด <b>Try it</b> (เหนือหน้าจอ) ใช้แตะลองดูเอฟเฟกต์และเสียงได้</p>
+      <h3>หน้าและการจัดวาง</h3>
+      <ul>
+        <li><b>Pages</b> (แผงซ้าย): เพิ่ม ทำสำเนา เรียงลำดับ และตั้งชื่อหน้า ถ้ามีมากกว่าหนึ่งหน้า คีย์แพดจะมีแถบ <b>&lt; &gt;</b> ด้านล่างไว้เปลี่ยนหน้า</li>
+        <li><b>Layout grid:</b> กำหนดจำนวนแถว คอลัมน์ ระยะขอบ และช่องว่าง แล้วกด <b>Arrange keys in grid</b></li>
+        <li><b>Background:</b> ใช้สีเดียว ไล่เฉดสี หรือรูปภาพ (ปรับการจัดวางและความมืดได้)</li>
+        <li><b>Screen orientation</b> (แท็บ Keypad): แนวตั้ง แนวนอน (หมุนคีย์แพดไปทางซ้ายหรือขวา) หรือกลับหัว บอร์ดนี้ไม่มีเซนเซอร์วัดการเอียง จึงต้องเลือกเองตรงนี้</li>
+      </ul>
+      <h3>แท็บ Keycap</h3>
+      <ul>
+        <li><b>Label (ข้อความบนปุ่ม):</b> พิมพ์ได้ทุกภาษารวมถึงภาษาไทยและอีโมจิ ปรับฟอนต์ ขนาด ความหนา สี ตำแหน่ง และ<b>ความโปร่งใสของข้อความ</b> (0% ทึบ ถึง 100% มองไม่เห็น)</li>
+        <li><b>Icon:</b> กด <b>Choose icon…</b> เพื่อเปิดตารางไอคอนฟรีกว่า 1,800 แบบที่ค้นหาได้ (ค้นด้วยคำภาษาอังกฤษ เช่น "copy", "volume", "mail") เลือกสี ขนาด และตำแหน่ง: เหนือข้อความ ซ้ายของข้อความ หรือไอคอนอย่างเดียว</li>
+        <li><b>Keycap style:</b> แบบเรียบ 3D แก้ว เส้นขอบ นีออน หรือรูปภาพ พร้อมสีและความมนของมุม</li>
+        <li><b>Picture:</b> กด <b>Choose picture…</b> หรือ<b>ลากรูปไปวางบนปุ่ม</b>ในหน้าจอจำลองได้เลย เลือกการจัดวาง: เต็มปุ่ม พอดีในปุ่ม หรือไอคอนเล็กเหนือข้อความ</li>
+        <li><b>Picture across keys</b> (แผงซ้าย): ใช้รูปเดียวกระจายทั่วทุกปุ่มในหน้า แต่ละปุ่มจะแสดงส่วนของรูปตามตำแหน่ง ปุ่มที่มีรูปของตัวเองจะใช้รูปของตัวเองแทน</li>
+        <li><b>Apply … to This page / All pages:</b> คัดลอกสไตล์ข้อความและไอคอน หรือสไตล์ปุ่มและการจัดวางรูป จากปุ่มที่เลือกไปยังปุ่มอื่นทั้งหน้าหรือทุกหน้า</li>
+      </ul>
+    </section>
+
+    <section id="actions">
+      <h2>5. คำสั่งและมาโคร</h2>
+      <p>แท็บ <b>Action</b> แสดงสิ่งที่ปุ่มจะพิมพ์ เรียงจากบนลงล่าง:</p>
+      <ul>
+        <li><b>+ Shortcut</b> คีย์ลัด: ติ๊กปุ่มปรับ (Ctrl, Shift, Alt, Win/Cmd) แล้วเลือกปุ่ม วิธีที่ง่ายที่สุดคือกด <b>Press keys…</b> แล้วกดคีย์ลัดจริงบนคีย์บอร์ด</li>
+        <li><b>+ Text</b> พิมพ์ข้อความ</li>
+        <li><b>+ Pause</b> หยุดรอ (สูงสุด 10 วินาที)</li>
+        <li><b>● Record keys</b> อัดการกดคีย์บอร์ดจริง แล้วกด Stop ระบบจะจัดให้เป็นข้อความและคีย์ลัด หรือติ๊ก <b>Keep exact timing</b> เพื่อเล่นซ้ำตามจังหวะจริงทุกอย่าง</li>
+        <li>ลากที่ ⋮⋮ หรือกด ↑ ↓ เพื่อเรียงลำดับ และกด <b>Run on keypad</b> เพื่อทดลอง</li>
+      </ul>
+      <div class="note"><b>ผู้ใช้ Mac</b> ให้ใช้ <b>Win/Cmd</b> แทน Ctrl เช่น Copy = Cmd+C, Paste = Cmd+V (ปุ่มตัวอย่างที่ติดมาใช้ Ctrl แบบ Windows)</div>
+      <div class="note warn">คำสั่ง <b>Text</b> พิมพ์ด้วย<b>ผังแป้นพิมพ์ภาษาอังกฤษ (US)</b> และตัวอักษรพื้นฐานเท่านั้น (A–Z ตัวเลข และเครื่องหมาย) จึงยังพิมพ์ข้อความภาษาไทยด้วยคำสั่ง Text ไม่ได้ ส่วนข้อความบนปุ่มใช้ภาษาไทยได้ตามปกติ</div>
+    </section>
+
+    <section id="fx">
+      <h2>6. แอนิเมชัน แสง และเสียง</h2>
+      <ul>
+        <li><b>Press motion:</b> ยุบ (push) เด้งออก (pop) จม (sink) เด้งดึ๋ง (bounce) หรือไม่มี</li>
+        <li><b>Light:</b> เรืองแสง (glow) วงกระเพื่อม (ripple) แฟลช (flash) หรือเส้นขอบ (outline) ปรับสีและความเร็วได้ ปุ่ม <b>Apply … to whole page</b> ใช้คัดลอกไปทั้งหน้า</li>
+        <li><b>Idle ambient light</b> (แท็บ Keypad): breathe (หายใจ) rainbow (สายรุ้ง) หรือ wave (คลื่น) เมื่อไม่ได้แตะจอสักพัก</li>
+        <li><b>ความสว่างและการหรี่จอ</b> (แท็บ Keypad): จอจะหรี่ลงหลังไม่ได้ใช้งานสักพัก การแตะครั้งแรกจะแค่ปลุกจอ</li>
+        <li><b>Click sound on PC</b> (แท็บ Keypad): เลือกเสียงหรืออัปโหลดเสียงของตัวเอง เสียงจะดังเมื่อเปิดสตูดิโอไว้ (หรือติดตั้งเป็นแอปจากแถบที่อยู่) และเชื่อมต่ออยู่</li>
+      </ul>
+    </section>
+
+    <section id="save">
+      <h2>7. Save to keypad กับ Update firmware ต่างกันอย่างไร</h2>
+      <table>
+        <tr><th></th><th>Save to keypad</th><th>Update firmware</th></tr>
+        <tr><td>ส่งอะไร</td><td>งานออกแบบของคุณ: หน้า ปุ่ม รูป ไอคอน เอฟเฟกต์ มาโคร</td><td>โปรแกรมของคีย์แพด</td></tr>
+        <tr><td>ใช้เมื่อไร</td><td>หลังแก้ไขงานออกแบบ<b>ทุกครั้ง</b></td><td>เฉพาะเมื่อมีเวอร์ชันใหม่</td></tr>
+        <tr><td>คีย์แพดรีสตาร์ตไหม</td><td>ไม่ จะขึ้นคำว่า "Saved"</td><td>ใช่ รีสตาร์ตเอง</td></tr>
+        <tr><td>เลย์เอาต์เปลี่ยนไหม</td><td>เปลี่ยน</td><td>ไม่เปลี่ยน เก็บไว้เหมือนเดิม</td></tr>
+      </table>
+      <p>ปุ่ม <b>Save to keypad</b> จะมี<b style="color:#f0a020">จุดสีส้ม</b>เมื่อคีย์แพดยังไม่มีงานออกแบบล่าสุด และแสดง <b style="color:#29d391">Saved ✓</b> เมื่อตรงกันแล้ว</p>
+    </section>
+
+    <section id="update">
+      <h2>8. อัปเดตเฟิร์มแวร์</h2>
+      <ol>
+        <li>เชื่อมต่อสตูดิโอผ่าน <b>USB</b></li>
+        <li>เปิดแท็บ <b>Keypad</b> → <b>Firmware</b> จะแสดงเวอร์ชันที่ติดตั้งอยู่และเวอร์ชันล่าสุด</li>
+        <li>กด <b>Update to x.y.z</b> คีย์แพดจะแสดง "Updating n %" แล้วรีสตาร์ตเอง สตูดิโอจะเชื่อมต่อกลับให้อัตโนมัติ ไม่ต้องกดปุ่มบนบอร์ด และเลย์เอาต์ยังอยู่ครบ</li>
+      </ol>
+      <p>คีย์แพดที่เวอร์ชันต่ำกว่า <b>1.3.0</b> จะขึ้นปุ่ม <b>Update … (one-time setup)</b>: คีย์แพดจะเข้าโหมดติดตั้งเองและเปิดหน้า Firmware ให้ กด Install แล้วเลือก <i>USB JTAG/serial debug unit</i> จากนั้นกด <b>Save to keypad</b> อีกหนึ่งครั้ง (ขั้นตอนครั้งเดียวนี้จะล้างหน่วยความจำของคีย์แพด แต่งานออกแบบยังอยู่ในเบราว์เซอร์)</p>
+      <p>ดูเวอร์ชันของคีย์แพดได้จาก: ตัวเลขสีเทาเล็ก ๆ ในแถบด้านบน หน้าจอตอนเปิดเครื่อง หรือแตะแถบด้านบนค้างไว้ 1.5 วินาที</p>
+    </section>
+
+    <section id="trouble">
+      <h2>9. แก้ปัญหา</h2>
+      <details><summary>แตะปุ่มแล้วไม่มีอะไรเกิดขึ้น</summary>
+        <ul><li>ดูแถบด้านบนของคีย์แพด ถ้าเป็น <b>---</b> แปลว่ายังไม่เชื่อมต่อ ให้เสียบ USB หรือจับคู่บลูทูธ</li>
+        <li>ในแท็บ Keypad ของสตูดิโอ <i>Typing via</i> ควรเป็น USB หรือ BLE ถ้าเป็น NONE ในเวอร์ชันเก่า ให้อัปเดตเฟิร์มแวร์</li>
+        <li>บน Mac คีย์ลัด Ctrl ใช้ไม่ได้ในแอปส่วนใหญ่ ให้เปลี่ยนเป็น Win/Cmd</li>
+        <li>ถ้าจอหรี่อยู่ การแตะครั้งแรกจะแค่ปลุกจอ</li></ul></details>
+      <details><summary>ไม่มีเสียงคลิก</summary>ต้องเปิดสตูดิโอไว้และเชื่อมต่ออยู่ ติ๊ก <i>Play a click…</i> (แท็บ Keypad) เปิดเสียง และปุ่มนั้นไม่ได้ตั้งเป็น "No sound" ให้คลิกที่ใดก็ได้ในสตูดิโอหนึ่งครั้ง เพราะเบราว์เซอร์อนุญาตให้เล่นเสียงหลังผู้ใช้คลิกเท่านั้น</details>
+      <details><summary>ขึ้นว่า "Save failed: crc mismatch"</summary>แก้แล้วในสตูดิโอ build 6515159 และเฟิร์มแวร์ 1.3.2 ให้รีโหลดสตูดิโอ (Cmd/Ctrl+Shift+R) แล้วอัปเดตเฟิร์มแวร์</details>
+      <details><summary>หน้า Firmware ขึ้น "Failed to initialize" หรือค้างที่ "wrapping up"</summary>ให้ใช้ปุ่ม <b>Update firmware</b> ในสตูดิโอแทน ถ้าจำเป็นต้องใช้หน้า Firmware: กดปุ่ม BOOT ค้างไว้ระหว่างเสียบสาย แล้วเลือก <i>USB JTAG/serial debug unit</i> ถ้าค้างที่ "wrapping up" หลัง 100% ให้ปิดหน้าต่างนั้นแล้วกด RESET</details>
+      <details><summary>หน้าสตูดิโอค้าง ("Page Unresponsive")</summary>แก้แล้วในสตูดิโอ build 85d9c74 ให้รีโหลดด้วย Cmd/Ctrl+Shift+R</details>
+      <details><summary>รูปภาพไม่ขึ้นบนคีย์แพด</summary>รูปภาพและดีไซน์ปุ่มส่งได้ผ่าน USB เท่านั้น ให้เชื่อมต่อผ่าน USB แล้วกด Save อีกครั้ง</details>
+      <details><summary>แนวนอนแสดงกลับหัว</summary>เลือกแนวนอนอีกแบบในแท็บ Keypad แล้วกด Save</details>
+      <details><summary>เริ่มใหม่ทั้งหมด</summary>กด Export เก็บงานออกแบบไว้ก่อน จากนั้นใช้ <b>Load from keypad</b> / Import หรือใช้หน้า Firmware แบบ <i>Erase</i> เพื่อล้างคีย์แพดทั้งหมด</details>
+    </section>
+
+    <section id="credits">
+      <h2>10. เครดิตและสัญญาอนุญาต</h2>
+      <ul>
+        <li>ไอคอน: <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a> (ISC License)</li>
+        <li>ไลบรารีเฟิร์มแวร์: <a href="https://github.com/moononournation/Arduino_GFX" target="_blank" rel="noopener">Arduino_GFX</a>, <a href="https://github.com/h2zero/NimBLE-Arduino" target="_blank" rel="noopener">NimBLE-Arduino</a>, <a href="https://arduinojson.org" target="_blank" rel="noopener">ArduinoJson</a>, Arduino-ESP32 / TinyUSB</li>
+        <li>ตัวติดตั้งในเบราว์เซอร์: <a href="https://esphome.github.io/esp-web-tools/" target="_blank" rel="noopener">ESP Web Tools</a></li>
+        <li>โฮสต์บน Cloudflare Workers ซอร์สโค้ดอยู่ที่ <a href="https://github.com/sirisakG2/Touch-Macro-Keypad-JC3248W535C" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
+    </section>
+  </article>
+</div>
+<script type="module" src="ver.js"></script>
+</body>
+</html>

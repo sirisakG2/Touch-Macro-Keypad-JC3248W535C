@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#0f1220">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<script src="theme.js"></script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -26,13 +27,14 @@
     <button id="btnImport" class="btn ghost">Import</button>
     <button id="btnExport" class="btn ghost">Export</button>
     <a class="btn ghost" href="flasher.html" target="_blank" rel="noopener">Firmware</a>
-    <a class="btn ghost" href="guide.html" target="_blank" rel="noopener" title="How to install, design, use and update the keypad">Guide</a>
+    <a class="btn ghost" href="guide.html" data-guide target="_blank" rel="noopener" title="How to install, design, use and update the keypad">Guide</a>
+    <button class="btn ghost theme-btn" type="button">◐ Auto</button>
   </div>
   <input id="fileImport" type="file" accept=".json,application/json" hidden>
 </header>
 
 <div id="banner" class="banner" hidden></div>
-<div id="welcome" class="banner welcome" hidden>New here? The <a href="guide.html" target="_blank" rel="noopener">user guide</a> explains installing, designing keys, macros and updates in a few minutes. <button id="welcomeClose" class="btn sm ghost">Got it</button></div>
+<div id="welcome" class="banner welcome" hidden>New here? The <a href="guide.html" data-guide target="_blank" rel="noopener">user guide</a> (English / ไทย) explains installing, designing keys, macros and updates in a few minutes. <button id="welcomeClose" class="btn sm ghost">Got it</button></div>
 
 <main class="layout">
   <!-- Pages + background + grid -->
