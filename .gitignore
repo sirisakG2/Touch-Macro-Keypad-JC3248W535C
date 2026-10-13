@@ -1,0 +1,5 @@
+.pio/
+node_modules/
+.wrangler/
+.dev.vars
+*.tmp
