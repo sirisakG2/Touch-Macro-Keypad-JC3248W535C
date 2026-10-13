@@ -77,4 +77,10 @@ Every push to GitHub builds and deploys automatically. It does not use GitHub Ac
    - **Branch:** `main`
 3. Save. Each push now builds the firmware and redeploys the studio.
 
-If the firmware build ever runs past Cloudflare's 20-minute build limit, add the build variable `SKIP_FIRMWARE=1`. The build then ships the firmware already committed in `web/public/fw/`. Refresh that copy with `npm run build` locally and commit it.
+**Fast builds.** `web/public/fw/manifest.json` records a hash of the firmware sources. When the committed firmware in `web/public/fw/` matches `firmware/`, Cloudflare skips PlatformIO entirely, and a deploy takes about 35 s instead of about 6 min.
+
+After changing `firmware/`, run `npm run build` locally and commit `web/public/fw/` together with the change. If you don't, Cloudflare compiles it for you, which takes about 6 min.
+
+You can set these build variables in Cloudflare:
+- `FORCE_FIRMWARE=1` always rebuilds the firmware.
+- `SKIP_FIRMWARE=1` never builds it and ships whatever is committed.
