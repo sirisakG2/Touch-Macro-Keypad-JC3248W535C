@@ -61,8 +61,16 @@ static bool keyAnimating(const KeyDef &k, const KeyAnim &a, uint32_t now) {
   return k.light == LI_RIPPLE && now - a.pressT < (uint32_t)k.fxMs * 2;
 }
 
+// ms since the last touch. lastTouch is written by the touch task, so it can be a few ms newer than
+// `now` taken by the UI loop; a plain `now - lastTouch` then wraps to ~49 days and the keypad thought
+// it was idle, dimmed itself and swallowed the next tap as a wake-up (keys did nothing, 1.1.0-1.3.2).
+static uint32_t sinceTouch(uint32_t now) {
+  int32_t d = (int32_t)(now - lastTouch);
+  return d > 0 ? (uint32_t)d : 0;
+}
+
 static bool idleActive(uint32_t now) {
-  return cfg.idle != ID_NONE && !dimmed && now - lastTouch > cfg.idleAfter * 1000UL;
+  return cfg.idle != ID_NONE && !dimmed && sinceTouch(now) > cfg.idleAfter * 1000UL;
 }
 
 // ---------- assets ----------
@@ -317,6 +325,7 @@ static void releaseAll(uint32_t now) {
 static void handleTouchEvents() {
   TouchEv ev;
   while (xQueueReceive(touchQ, &ev, 0) == pdTRUE) {
+    ev.t = millis();   // UI-loop clock, so animation maths never sees a timestamp from its future
     switch (ev.type) {
       case EV_WAKE: dimmed = false; applyBrightness(); needFrame = true; break;
       case EV_NAV: uiSetPage((page + cfg.pages.size() + ev.dir) % cfg.pages.size()); break;
@@ -392,7 +401,7 @@ void uiLoop() {
   handleTouchEvents();
   uint32_t now = millis();
 
-  if (!dimmed && cfg.dimAfter && now - lastTouch > cfg.dimAfter * 1000UL) { dimmed = true; applyBrightness(); needFrame = true; }
+  if (!dimmed && cfg.dimAfter && sinceTouch(now) > cfg.dimAfter * 1000UL) { dimmed = true; applyBrightness(); needFrame = true; }
   Link l = hidLink(); BleState b = hidBleState();
   if (l != lastLink || b != lastBle) { lastLink = l; lastBle = b; baseDirty = true; }
 
