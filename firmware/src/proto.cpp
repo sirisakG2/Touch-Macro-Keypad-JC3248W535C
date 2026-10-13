@@ -86,6 +86,13 @@ static String applyConfig() {
   return "";
 }
 
+// The studio sends the CRC as a signed 32-bit number; accept unsigned too. (<= 1.3.1 read it as an
+// int with `| 0`, so CRCs above INT32_MAX became 0 and saves failed with "crc mismatch".)
+static uint32_t reqCrc(JsonDocument &req) {
+  JsonVariant v = req["crc"];
+  return v.is<int32_t>() ? (uint32_t)v.as<int32_t>() : v.as<uint32_t>();
+}
+
 static void handle(Src src, char *line, size_t len) {
   JsonDocument req;
   if (deserializeJson(req, line, len)) return;     // ignore noise
@@ -163,7 +170,7 @@ static void handle(Src src, char *line, size_t len) {
     if (!upFile) err = "no upload";
     else {
       upFile.close();
-      uint32_t crc = req["crc"] | 0;
+      uint32_t crc = reqCrc(req);
       if (upDone != upSize) err = "size mismatch";
       else if (crc != upCrc) err = "crc mismatch";
       if (err.length()) LittleFS.remove(upName + ".tmp");
@@ -239,7 +246,7 @@ static void handle(Src src, char *line, size_t len) {
     }
     if (err.length() && otaActive) { Update.abort(); otaActive = false; uiMessage("Update failed"); }
   } else if (!strcmp(cmd, "ota_end")) {
-    uint32_t crc = req["crc"] | 0;
+    uint32_t crc = reqCrc(req);
     if (!otaActive) err = "no update running";
     else if (otaDone != otaSize) err = "size mismatch";
     else if (crc != otaCrc) err = "crc mismatch";

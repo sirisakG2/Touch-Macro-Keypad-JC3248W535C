@@ -2,6 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Device, crc32, toB64, fromB64 } from '../public/transport.js';
 
+// Firmware <= 1.3.1 read crc with `req["crc"] | 0` (an int): values above INT32_MAX became 0.
+// Firmware >= 1.3.2 accepts signed or unsigned. Model the old behaviour so the studio stays compatible.
+const fwCrc = (v) => (Number.isInteger(v) && v >= -2147483648 && v <= 2147483647 ? v >>> 0 : 0);
+
 // In-memory stand-in for firmware/src/proto.cpp file commands.
 class FakeKeypad {
   constructor() { this.files = new Map(); this.up = null; this.kind = 'usb'; this.chunk = 1000; }
@@ -18,7 +22,7 @@ class FakeKeypad {
         break;
       }
       case 'wend': {
-        if (req.crc !== this.up.crc || this.up.done !== this.up.size) { fail('crc mismatch'); break; }
+        if (fwCrc(req.crc) !== this.up.crc || this.up.done !== this.up.size) { fail('crc mismatch'); break; }
         const all = new Uint8Array(this.up.done); let o = 0;
         for (const p of this.up.parts) { all.set(p, o); o += p.length; }
         this.files.set('/' + this.up.name, all);
@@ -38,7 +42,7 @@ class FakeKeypad {
         break;
       }
       case 'ota_end':
-        if (req.crc !== this.ota.crc || this.ota.done !== this.ota.size) fail('crc mismatch');
+        if (fwCrc(req.crc) !== this.ota.crc || this.ota.done !== this.ota.size) fail('crc mismatch');
         else this.rebooted = true;
         break;
       case 'ls': res.files = [...this.files].map(([n, b]) => ({ n, s: b.length })); break;
@@ -78,4 +82,12 @@ test('updateFirmware refuses Bluetooth', async () => {
   const link = new FakeKeypad();
   link.kind = 'ble';
   await assert.rejects(new Device(link).updateFirmware(new Uint8Array(4)), /USB/);
+});
+
+test('files whose CRC is above INT32_MAX still verify (crc mismatch bug)', async () => {
+  let data, n = 0;
+  do { data = new TextEncoder().encode(`project ${n++}`); } while (crc32(data) <= 0x7fffffff);
+  const link = new FakeKeypad();
+  await new Device(link).writeFile('project.json', data);
+  assert.deepEqual(link.files.get('/project.json'), data);
 });

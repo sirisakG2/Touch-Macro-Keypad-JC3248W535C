@@ -22,6 +22,10 @@ export function crc32(bytes, crc = 0) {
   return ~c >>> 0;
 }
 
+// CRC as a signed 32-bit number: firmware <= 1.3.1 parsed it as an int and turned values above
+// INT32_MAX into 0 ("crc mismatch"). Same bits, so newer firmware reads it either way.
+const wireCrc = (bytes) => crc32(bytes) | 0;
+
 export function toB64(bytes) {
   let s = '';
   for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
@@ -158,7 +162,7 @@ export class Device {
       await this.rpc('wchunk', { off, data: toB64(part) });
       onProgress?.(Math.min(off + part.length, bytes.length), bytes.length);
     }
-    await this.rpc('wend', { crc: crc32(bytes) }, 15000);
+    await this.rpc('wend', { crc: wireCrc(bytes) }, 15000);
   }
   async readFile(name) {
     const parts = [];
@@ -184,7 +188,7 @@ export class Device {
       await this.rpc('ota_chunk', { off, data: toB64(part) }, 15000);
       onProgress?.(Math.min(off + part.length, bytes.length), bytes.length);
     }
-    await this.rpc('ota_end', { crc: crc32(bytes) }, 20000);
+    await this.rpc('ota_end', { crc: wireCrc(bytes) }, 20000);
   }
   remove(name) { return this.rpc('rm', { name }); }
   apply() { return this.rpc('apply', {}, 15000); }
