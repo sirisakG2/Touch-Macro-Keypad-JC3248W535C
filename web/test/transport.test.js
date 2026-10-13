@@ -22,3 +22,12 @@ test('pack565 writes the firmware header, LE pixels and alpha', () => {
   assert.deepEqual([...out.subarray(12)], [255, 128]);
   assert.equal(fnv1a(out).length, 8);
 });
+
+test('designHash is stable for the same design and changes with any edit', async () => {
+  const { designHash } = await import('../public/designer.js');
+  const p = { name: 'K', pages: [{ name: 'P', keys: [{ label: 'Copy', actions: [{ t: 'combo', mods: ['gui'], key: 'c' }] }] }] };
+  assert.equal(designHash(p), designHash(JSON.parse(JSON.stringify(p))));
+  const q = JSON.parse(JSON.stringify(p));
+  q.pages[0].keys[0].label = 'Copy!';
+  assert.notEqual(designHash(p), designHash(q));
+});

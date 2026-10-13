@@ -2,7 +2,7 @@
 import { KEYS, MODS, codeToKey, comboText, prettyKey } from './keys.js';
 import { SCREEN, MOTIONS, LIGHTS, IDLES, validateConfig } from './schema.js';
 import { Device, SerialLink, BleLink } from './transport.js';
-import { STYLES, FONTS, compileProject, drawCap, renderCapCanvas, renderBgCanvas, importImage, asciiLabel } from './designer.js';
+import { STYLES, FONTS, compileProject, designHash, drawCap, renderCapCanvas, renderBgCanvas, importImage, asciiLabel } from './designer.js';
 import { Preview } from './fx.js';
 import { Recorder, eventsToRawSteps, simplifySteps } from './macro-recorder.js';
 import { SOUND_PRESETS, playClick } from './sound.js';
@@ -111,6 +111,7 @@ const curKey = () => curPage().keys[state.key];
 let saveTimer;
 function changed({ visuals = true, panels = false } = {}) {
   state.unsaved = true;
+  renderSaveState();
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => db.set('project', state.project), 400);
   if (visuals) refreshVisuals();
@@ -610,6 +611,27 @@ $('screen').addEventListener('pointerup', endDrag);
 $('screen').addEventListener('pointercancel', endDrag);
 
 // ---------------------------------------------------------------- device link
+// Save button shows whether the keypad has this exact design: orange dot = unsaved, green = saved.
+function renderSaveState() {
+  const b = $('btnSave');
+  const synced = !!state.device && !state.unsaved;
+  b.classList.toggle('dirty', state.unsaved);
+  b.classList.toggle('synced', synced);
+  b.textContent = synced ? 'Saved ✓' : 'Save to keypad';
+}
+
+// Compare the keypad's saved design fingerprint with this browser's design.
+async function checkSync(d) {
+  try {
+    const files = (await d.list()).map((f) => f.n);
+    let onKeypad = null;
+    if (files.includes('/config.json')) onKeypad = JSON.parse(new TextDecoder().decode(await d.readFile('config.json'))).design || null;
+    if (state.device !== d) return;
+    state.unsaved = onKeypad !== designHash(state.project);
+  } catch { /* leave as is */ }
+  renderSaveState();
+}
+
 function setConn() {
   const d = state.device;
   const chip = $('connState');
@@ -618,6 +640,7 @@ function setConn() {
   $('btnUsb').hidden = $('btnBle').hidden = !!d;
   $('btnDisconnect').hidden = !d;
   $('btnLoad').disabled = $('btnSave').disabled = !d;
+  renderSaveState();
   renderDevice();
   renderSteps();
 }
@@ -627,6 +650,7 @@ async function attach(d) {
   d.onEvent = onDeviceEvent;
   d.onClose = () => { if (state.device !== d) return; state.device = null; setConn(); if (!state.updating) toast('Keypad disconnected'); };
   setConn();
+  checkSync(d);
 }
 
 async function connect(kind) {
@@ -668,6 +692,8 @@ async function saveToDevice() {
       progress('Sending layout over Bluetooth…', 0.2);
       await d.writeFile('config.json', cfgBytes, (a, b) => progress('Sending layout over Bluetooth…', a / b));
       await d.apply();
+      state.unsaved = designHash(state.project) !== config.design;
+      renderSaveState();
       toast('Saved layout and macros.\nPictures and keycap designs are only sent over USB - the keypad shows plain keys until you save over USB.');
       return;
     }
@@ -689,7 +715,8 @@ async function saveToDevice() {
     // remove pictures no longer used
     for (const n of existing.keys()) if (n.startsWith('img/') && !files.has(n)) await d.remove(n).catch(() => {});
     d.info = await d.rpc('hello');
-    state.unsaved = false;
+    state.unsaved = designHash(state.project) !== config.design;   // still dirty if edited during the upload
+    renderSaveState();
     renderDevice();
     toast(`Saved to keypad (${todo.length} new picture${todo.length === 1 ? '' : 's'}).`);
   } catch (e) {
@@ -717,6 +744,7 @@ async function loadFromDevice() {
     }
     setProject(project);
     state.unsaved = false;
+    renderSaveState();
     toast('Loaded design from keypad');
   } catch (e) {
     toast(`Load failed: ${e.message}`, true);
@@ -977,6 +1005,7 @@ async function init() {
   const saved = await db.get('project').catch(() => null);
   setProject(saved || defaultProject());
   state.unsaved = false;
+  renderSaveState();
   requestAnimationFrame(frame);
   loadLatest();
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});

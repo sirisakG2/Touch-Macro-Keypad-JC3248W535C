@@ -161,6 +161,10 @@ export async function renderBgCanvas(page) {
 
 const isPlainBg = (p) => (p.bg?.type || 'gradient') !== 'image';
 
+// Fingerprint of the whole design, stored in the keypad's config.json so the studio can tell whether
+// the keypad has exactly this design (the firmware ignores the field).
+export const designHash = (project) => fnv1a(new TextEncoder().encode(JSON.stringify(project)));
+
 // Project -> { config (device JSON), files: Map(path -> Uint8Array) }.
 // Keycaps are always rendered into images so fonts/emoji/styles look the same on the device.
 export async function compileProject(project) {
@@ -194,7 +198,7 @@ export async function compileProject(project) {
     pages.push({ name: asciiLabel(p.name) || 'Page', bg, keys });
   }
   const config = {
-    v: 1, name: asciiLabel(project.name) || 'Macro Keypad', brightness: project.brightness ?? 80,
+    v: 1, design: designHash(project), name: asciiLabel(project.name) || 'Macro Keypad', brightness: project.brightness ?? 80,
     statusBar: project.statusBar !== false, dim: project.dim, idle: project.idle, pages,
   };
   return { config, files };

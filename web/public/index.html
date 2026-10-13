@@ -20,8 +20,8 @@
     <button id="btnDisconnect" class="btn ghost" hidden>Disconnect</button>
   </div>
   <div class="actions">
-    <button id="btnLoad" class="btn" disabled>Load from keypad</button>
-    <button id="btnSave" class="btn primary" disabled>Save to keypad</button>
+    <button id="btnLoad" class="btn" disabled title="Replace the design in this browser with the one saved on the keypad.">Load from keypad</button>
+    <button id="btnSave" class="btn primary" disabled title="Send your design to the keypad: pages, keys, pictures, effects and macros. Use after every change. The keypad doesn't restart.">Save to keypad</button>
     <span class="sep"></span>
     <button id="btnImport" class="btn ghost">Import</button>
     <button id="btnExport" class="btn ghost">Export</button>
@@ -196,9 +196,9 @@
       <h3>Firmware</h3>
       <div id="fwInfo" class="devinfo">Connect over USB to check for updates.</div>
       <div class="row wrap">
-        <button id="fwUpdate" class="btn sm primary" disabled>Update firmware</button>
+        <button id="fwUpdate" class="btn sm primary" disabled title="Replace the keypad's program (firmware) with the newest version from the server. The keypad restarts by itself; your saved layout is kept. Only needed when a new version is available.">Update firmware</button>
       </div>
-      <p class="hint">Updates install over USB in about 30 s and the keypad restarts by itself - no BOOT button needed. Your layout is kept.</p>
+      <p class="hint">Updates install over USB in about 30 s and the keypad restarts by itself - no BOOT button needed. Your layout is kept. Changed your design? Use <b>Save to keypad</b> instead.</p>
       <div class="row wrap">
         <button id="dBoot" class="btn sm ghost" disabled title="Only needed for a full install from the Firmware page">Restart into bootloader</button>
         <button id="dReboot" class="btn sm ghost" disabled>Restart keypad</button>
