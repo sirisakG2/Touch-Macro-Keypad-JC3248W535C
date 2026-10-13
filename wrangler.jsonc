@@ -1,6 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "touch-macro-keypad",
+  "name": "touch-macro-keypad-jc3248w535c",
+  "workers_dev": true,
+  "preview_urls": true,
   "main": "web/src/worker.js",
   "compatibility_date": "2025-09-01",
   "assets": { "directory": "./web/public", "binding": "ASSETS" },

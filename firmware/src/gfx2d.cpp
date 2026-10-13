@@ -82,17 +82,38 @@ void fillRoundRectAA(uint16_t *fb, float x, float y, float w, float h, float r, 
   });
 }
 
-void glowRoundRect(uint16_t *fb, float x, float y, float w, float h, float r, float spread, uint16_t c, float alpha) {
+void glowRoundRect(uint16_t *fb, float x, float y, float w, float h, float r, float spread, uint16_t c, float alpha,
+                   const uint16_t *bgMask) {
   if (alpha <= 0.01f) return;
   r = min(r, min(w, h) / 2);
   float cx = x + w / 2, cy = y + h / 2;
-  forBox(x - spread, y - spread, x + w + spread, y + h + spread, [&](int px, int py) {
-    float d = sdRoundRect(px + .5f, py + .5f, cx, cy, w / 2, h / 2, r);
-    if (d <= 0 || d >= spread) return;
-    float t = 1.f - d / spread;
-    uint16_t &p = fb[py * SCR_W + px];
-    p = blend565(p, c, (uint8_t)(alpha * t * t * 255));
-  });
+  const float inv = 1.f / spread;
+  const uint8_t a8 = (uint8_t)(min(alpha, 1.f) * 255);
+  int ix0 = max(0, (int)floorf(x - spread)), iy0 = max(0, (int)floorf(y - spread));
+  int ix1 = min(SCR_W, (int)ceilf(x + w + spread)), iy1 = min(SCR_H, (int)ceilf(y + h + spread));
+  int kx0 = (int)ceilf(x), kx1 = (int)floorf(x + w), ky0 = (int)ceilf(y), ky1 = (int)floorf(y + h);
+  int rr = (int)ceilf(r);
+  for (int py = iy0; py < iy1; py++) {
+    bool rowInside = py >= ky0 && py < ky1;
+    bool rowStraight = py >= ky0 + rr && py < ky1 - rr;
+    for (int px = ix0; px < ix1; px++) {
+      if (rowInside && px >= kx0 && px < kx1) {
+        if (rowStraight || (px >= kx0 + rr && px < kx1 - rr)) { px = rowStraight ? kx1 - 1 : px; continue; }   // inside the key
+      }
+      int i = py * SCR_W + px;
+      if (bgMask && fb[i] != bgMask[i]) continue;
+      float d = sdRoundRect(px + .5f, py + .5f, cx, cy, w / 2, h / 2, r);
+      if (d <= 0 || d >= spread) continue;
+      float t = 1.f - d * inv;
+      fb[i] = blend565(fb[i], c, (uint8_t)(a8 * t * t));
+    }
+  }
+}
+
+void copyRect(uint16_t *fb, const uint16_t *src, int x, int y, int w, int h) {
+  int x0 = max(0, x), y0 = max(0, y), x1 = min(SCR_W, x + w), y1 = min(SCR_H, y + h);
+  if (x1 <= x0) return;
+  for (int py = y0; py < y1; py++) memcpy(fb + py * SCR_W + x0, src + py * SCR_W + x0, (x1 - x0) * 2);
 }
 
 void outlineRoundRect(uint16_t *fb, float x, float y, float w, float h, float r, float thick, uint16_t c, float alpha) {

@@ -11,7 +11,7 @@
 
 enum Src : uint8_t { SRC_USB, SRC_BLE };
 
-#define LINE_MAX 12288
+#define PROTO_LINE_MAX 12288
 static char *lineBuf[2];
 static size_t lineLen[2];
 
@@ -76,8 +76,7 @@ static String applyConfig() {
   String err = parseConfig(buf, n, c);
   free(buf);
   if (err.length()) return err;
-  cfg = c;
-  uiReload();
+  uiApplyConfig(c);
   return "";
 }
 
@@ -100,6 +99,9 @@ static void handle(Src src, char *line, size_t len) {
     res["fsTotal"] = LittleFS.totalBytes();
     res["fsUsed"] = LittleFS.usedBytes();
     res["page"] = uiPage();
+    res["frameMs"] = (int)(uiFrameMs() + .5f);
+    res["heap"] = ESP.getFreeHeap();
+    res["psram"] = ESP.getFreePsram();
     res["w"] = 320; res["h"] = 480; res["statusH"] = STATUS_H; res["navH"] = NAV_H;
   } else if (!strcmp(cmd, "ls")) {
     JsonArray arr = res["files"].to<JsonArray>();
@@ -221,7 +223,7 @@ static void feed(Src s, const char *data, size_t n) {
     char c = data[i];
     if (c == '\n' || c == '\r') {
       if (len) { buf[len] = 0; handle(s, buf, len); len = 0; }
-    } else if (len < LINE_MAX - 1) {
+    } else if (len < PROTO_LINE_MAX - 1) {
       buf[len++] = c;
     } else {
       len = 0;   // overlong line: drop it
@@ -230,7 +232,7 @@ static void feed(Src s, const char *data, size_t n) {
 }
 
 void protoBegin() {
-  for (int i = 0; i < 2; i++) { lineBuf[i] = (char *)ps_malloc(LINE_MAX); lineLen[i] = 0; }
+  for (int i = 0; i < 2; i++) { lineBuf[i] = (char *)ps_malloc(PROTO_LINE_MAX); lineLen[i] = 0; }
 }
 
 void protoLoop() {

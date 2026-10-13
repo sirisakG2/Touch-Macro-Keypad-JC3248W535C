@@ -29,6 +29,7 @@ cat > web/public/fw/manifest.json <<JSON
   "version": "${VERSION}",
   "built": "${BUILT}",
   "new_install_prompt_erase": false,
+  "new_install_improv_wait_time": 0,
   "builds": [
     { "chipFamily": "ESP32-S3", "parts": [{ "path": "keypad-factory.bin", "offset": 0 }] }
   ]

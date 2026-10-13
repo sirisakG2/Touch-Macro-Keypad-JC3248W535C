@@ -271,7 +271,7 @@ function renderDevice() {
   $('sVolume').value = p.sound.volume;
   const d = state.device;
   $('devInfo').textContent = d
-    ? `Connected over ${d.kind === 'usb' ? 'USB' : 'Bluetooth'}\nFirmware ${d.info.fw} · ${d.info.board}\nTyping via: ${d.info.link.toUpperCase()}   Bluetooth: ${d.info.ble}\nStorage: ${(d.info.fsUsed / 1048576).toFixed(1)} / ${(d.info.fsTotal / 1048576).toFixed(1)} MB`
+    ? `Connected over ${d.kind === 'usb' ? 'USB' : 'Bluetooth'}\nFirmware ${d.info.fw} · ${d.info.board}\nTyping via: ${d.info.link.toUpperCase()}   Bluetooth: ${d.info.ble}\nStorage: ${(d.info.fsUsed / 1048576).toFixed(1)} / ${(d.info.fsTotal / 1048576).toFixed(1)} MB${d.info.frameMs !== undefined ? `\nScreen frame time: ${d.info.frameMs} ms` : ''}`
     : 'Not connected.';
   $('dBoot').disabled = !d || d.kind !== 'usb';
   $('dReboot').disabled = !d;
