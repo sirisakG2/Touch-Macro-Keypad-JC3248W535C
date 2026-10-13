@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keypad Firmware</title>
+<meta name="description" content="Install the Touch Macro Keypad firmware on a JC3248W535C from the browser.">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
+<style>
+  .wrap { max-width: 720px; margin: 24px auto; padding: 0 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; }
+  ol li { margin: 6px 0; }
+  code { background: var(--panel2); padding: 1px 5px; border-radius: 4px; }
+  esp-web-install-button button[slot=activate] { font-size: 16px; padding: 10px 18px; }
+  esp-web-install-button:not(:defined) [slot=unsupported], esp-web-install-button:not(:defined) [slot=not-allowed] { display: none; }
+</style>
+</head>
+<body>
+<header class="topbar"><div class="brand"><img src="icons/icon.svg" alt="" width="28" height="28"><span>Keypad Firmware</span></div><a class="btn ghost" href="./">← Back to the studio</a></header>
+<div class="wrap">
+  <div class="card">
+    <h2>Install or update</h2>
+    <p id="ver" class="hint">Loading version…</p>
+    <esp-web-install-button manifest="fw/manifest.json">
+      <button slot="activate" class="btn primary">Install firmware</button>
+      <span slot="unsupported">Your browser can't flash devices. Use Chrome or Edge on a computer.</span>
+      <span slot="not-allowed">Open this page over https to flash.</span>
+    </esp-web-install-button>
+  </div>
+  <div class="card">
+    <h2>Steps</h2>
+    <ol>
+      <li><b>First install (new board):</b> plug the board in with a data USB-C cable and click <i>Install firmware</i>. Pick the port named <code>USB JTAG/serial debug unit</code>.</li>
+      <li><b>Updating a keypad that already runs this firmware:</b> it now shows up as a keyboard, so put it in update mode first:
+        either click <i>Keypad → Restart into firmware update mode</i> in the studio, or hold <b>BOOT</b>, tap <b>RESET</b>, release <b>BOOT</b>. Then click <i>Install firmware</i>.</li>
+      <li>When it finishes, press <b>RESET</b> (or unplug and plug in again).</li>
+      <li>Choosing <i>Erase</i> also wipes your saved layout and pictures. Export your project in the studio first.</li>
+    </ol>
+  </div>
+</div>
+<script>
+  fetch('fw/manifest.json').then((r) => r.json()).then((m) => {
+    document.getElementById('ver').textContent = `Firmware ${m.version}` + (m.built ? ` · built ${m.built}` : '');
+  }).catch(() => { document.getElementById('ver').textContent = 'No firmware build found on this server yet.'; });
+</script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Macro Keypad Studio</title>
+<meta name="description" content="Design layouts, keycaps, effects, click sounds and macros for the JC3248W535C touch macro keypad.">
+<meta name="theme-color" content="#0f1220">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><img src="icons/icon.svg" alt="" width="28" height="28"><span>Macro Keypad Studio</span></div>
+  <div class="conn">
+    <span id="connState" class="chip off">Not connected</span>
+    <button id="btnUsb" class="btn" title="Connect over USB (Web Serial)">USB</button>
+    <button id="btnBle" class="btn" title="Connect over Bluetooth (Web Bluetooth)">Bluetooth</button>
+    <button id="btnDisconnect" class="btn ghost" hidden>Disconnect</button>
+  </div>
+  <div class="actions">
+    <button id="btnLoad" class="btn" disabled>Load from keypad</button>
+    <button id="btnSave" class="btn primary" disabled>Save to keypad</button>
+    <span class="sep"></span>
+    <button id="btnImport" class="btn ghost">Import</button>
+    <button id="btnExport" class="btn ghost">Export</button>
+    <a class="btn ghost" href="flasher.html" target="_blank" rel="noopener">Firmware</a>
+  </div>
+  <input id="fileImport" type="file" accept=".json,application/json" hidden>
+</header>
+
+<div id="banner" class="banner" hidden></div>
+
+<main class="layout">
+  <!-- Pages + background + grid -->
+  <aside class="panel left">
+    <section>
+      <h2>Pages</h2>
+      <ul id="pageList" class="pagelist"></ul>
+      <div class="row wrap">
+        <button id="pgAdd" class="btn sm">+ Page</button>
+        <button id="pgDup" class="btn sm">Duplicate</button>
+        <button id="pgUp" class="btn sm" title="Move up">↑</button>
+        <button id="pgDown" class="btn sm" title="Move down">↓</button>
+        <button id="pgDel" class="btn sm danger">Delete</button>
+      </div>
+      <label>Page name <input id="pgName" maxlength="24"></label>
+    </section>
+    <section>
+      <h2>Background</h2>
+      <div class="seg" id="bgType">
+        <button data-v="color">Color</button><button data-v="gradient">Gradient</button><button data-v="image">Picture</button>
+      </div>
+      <div class="row"><label>Color <input id="bgColor" type="color"></label><label id="bgColor2Wrap">Bottom <input id="bgColor2" type="color"></label></div>
+      <div id="bgImageWrap">
+        <div class="row"><button id="bgPick" class="btn sm">Choose picture…</button><button id="bgClear" class="btn sm ghost">Remove</button></div>
+        <label>Fit <select id="bgFit"><option value="cover">Fill (crop)</option><option value="contain">Fit inside</option></select></label>
+        <label>Darken <input id="bgDim" type="range" min="0" max="0.8" step="0.05"></label>
+      </div>
+      <input id="bgFile" type="file" accept="image/*" hidden>
+    </section>
+    <section>
+      <h2>Layout grid</h2>
+      <div class="grid4">
+        <label>Rows <input id="grRows" type="number" min="1" max="8" value="4"></label>
+        <label>Cols <input id="grCols" type="number" min="1" max="6" value="3"></label>
+        <label>Margin <input id="grMargin" type="number" min="0" max="40" value="10"></label>
+        <label>Gap <input id="grGap" type="number" min="0" max="40" value="6"></label>
+      </div>
+      <button id="grApply" class="btn sm">Arrange keys in grid</button>
+      <p class="hint">Keeps your keys (in order) and adds or removes keys to fill the grid. The top bar (22 px) and page bar (44 px) are kept clear.</p>
+    </section>
+  </aside>
+
+  <!-- Device preview -->
+  <section class="stage">
+    <div class="stagebar">
+      <div class="seg" id="mode"><button data-v="edit" class="on">Design</button><button data-v="test">Try it</button></div>
+      <button id="keyAdd" class="btn sm">+ Key</button>
+      <button id="keyDup" class="btn sm">Duplicate</button>
+      <button id="keyDel" class="btn sm danger">Delete key</button>
+      <label class="check"><input id="idlePreview" type="checkbox"> Show idle effect</label>
+    </div>
+    <div class="device">
+      <canvas id="screen" width="320" height="480"></canvas>
+    </div>
+    <p class="hint center" id="stageHint">Click a key to edit it. Drag to move, drag the white corner to resize.</p>
+  </section>
+
+  <!-- Inspector -->
+  <aside class="panel right">
+    <div class="tabs" id="tabs">
+      <button data-tab="key" class="on">Keycap</button>
+      <button data-tab="macro">Action</button>
+      <button data-tab="fx">Motion &amp; light</button>
+      <button data-tab="device">Keypad</button>
+    </div>
+
+    <div class="tab" data-tab="key">
+      <p id="noKey" class="hint">Select a key on the screen.</p>
+      <div id="keyForm">
+        <label>Label <textarea id="kLabel" rows="2" maxlength="40" placeholder="Copy  (emoji welcome 🎉)"></textarea></label>
+        <div class="row">
+          <label>Font <select id="kFont"></select></label>
+          <label>Size <input id="kFontPx" type="number" min="8" max="72"></label>
+          <label>Weight <select id="kWeight"><option value="400">Normal</option><option value="700">Bold</option><option value="900">Black</option></select></label>
+        </div>
+        <div class="row">
+          <label>Text <input id="kText" type="color"></label>
+          <label>Position <select id="kLabelPos"><option value="">Auto</option><option value="center">Center</option><option value="top">Top</option><option value="bottom">Bottom</option></select></label>
+        </div>
+        <h3>Keycap</h3>
+        <div class="styles" id="kStyle"></div>
+        <div class="row">
+          <label>Color <input id="kColor" type="color"></label>
+          <label>Corner <input id="kRadius" type="range" min="0" max="48"></label>
+        </div>
+        <h3>Picture</h3>
+        <div class="row"><button id="kImgPick" class="btn sm">Choose picture…</button><button id="kImgClear" class="btn sm ghost">Remove</button></div>
+        <label>Picture fit <select id="kImgFit"><option value="cover">Fill keycap</option><option value="contain">Fit inside</option><option value="icon">Icon above label</option></select></label>
+        <input id="kImgFile" type="file" accept="image/*" hidden>
+        <h3>Position</h3>
+        <div class="grid4">
+          <label>X <input id="kX" type="number" min="0" max="320"></label>
+          <label>Y <input id="kY" type="number" min="0" max="480"></label>
+          <label>W <input id="kW" type="number" min="8" max="320"></label>
+          <label>H <input id="kH" type="number" min="8" max="480"></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab" data-tab="macro" hidden>
+      <p class="hint">What the keypad types when this key is pressed. Steps run from top to bottom.</p>
+      <ol id="steps" class="steps"></ol>
+      <div class="row wrap">
+        <button id="addCombo" class="btn sm">+ Shortcut</button>
+        <button id="addText" class="btn sm">+ Text</button>
+        <button id="addDelay" class="btn sm">+ Pause</button>
+        <button id="clearSteps" class="btn sm ghost">Clear</button>
+      </div>
+      <h3>Record</h3>
+      <div class="recbox">
+        <div class="row wrap">
+          <button id="recBtn" class="btn rec">● Record keys</button>
+          <label class="check"><input id="recTiming" type="checkbox"> Keep exact timing</label>
+        </div>
+        <div id="recLive" class="reclive">Press Record, type on your keyboard, then click Stop.</div>
+      </div>
+      <div class="row"><button id="testMacro" class="btn sm" disabled>Run on keypad</button></div>
+    </div>
+
+    <div class="tab" data-tab="fx" hidden>
+      <h3>Press motion</h3>
+      <div class="seg wrapseg" id="fxMotion"></div>
+      <h3>Light</h3>
+      <div class="seg wrapseg" id="fxLight"></div>
+      <div class="row">
+        <label>Light color <input id="fxColor" type="color"></label>
+        <label>Speed <input id="fxMs" type="range" min="80" max="1200" step="20"></label>
+      </div>
+      <h3>Click sound</h3>
+      <label>Sound for this key <select id="fxSound"></select></label>
+      <div class="row wrap">
+        <button id="fxPreview" class="btn sm">▶ Preview press</button>
+        <button id="fxAllPage" class="btn sm ghost">Apply motion, light &amp; sound to whole page</button>
+      </div>
+    </div>
+
+    <div class="tab" data-tab="device" hidden>
+      <label>Keypad name <input id="dName" maxlength="24"></label>
+      <label>Brightness <input id="dBright" type="range" min="5" max="100"></label>
+      <label class="check"><input id="dStatus" type="checkbox"> Show top status bar</label>
+      <div class="row">
+        <label>Dim after (s, 0 = never) <input id="dDimAfter" type="number" min="0" max="3600"></label>
+        <label>Dim level % <input id="dDimLevel" type="number" min="0" max="100"></label>
+      </div>
+      <h3>Idle ambient light</h3>
+      <div class="seg" id="idleEffect"></div>
+      <div class="row">
+        <label>Start after (s) <input id="idleAfter" type="number" min="1" max="3600"></label>
+        <label>Color <input id="idleColor" type="color"></label>
+      </div>
+      <label>Speed <input id="idleSpeed" type="range" min="1" max="100"></label>
+      <h3>Click sound on PC</h3>
+      <label class="check"><input id="sEnabled" type="checkbox"> Play a click on this PC's speakers when a key is pressed</label>
+      <div class="row">
+        <label>Default sound <select id="sPreset"></select></label>
+        <label>Volume <input id="sVolume" type="range" min="0" max="1" step="0.05"></label>
+      </div>
+      <div class="row"><button id="sUpload" class="btn sm">Upload my own sound…</button><button id="sTest" class="btn sm ghost">▶ Test</button></div>
+      <input id="sFile" type="file" accept="audio/*" hidden>
+      <p class="hint">The sound plays while this page is open (or installed as an app), over USB or Bluetooth.</p>
+      <h3>Keypad</h3>
+      <div id="devInfo" class="devinfo">Not connected.</div>
+      <div class="row wrap">
+        <button id="dBoot" class="btn sm ghost" disabled>Restart into firmware update mode</button>
+        <button id="dReboot" class="btn sm ghost" disabled>Restart keypad</button>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div id="progress" class="progress" hidden><div class="bar"><span></span></div><div class="label"></div></div>
+<div id="toast" class="toast" hidden></div>
+
+<template id="stepTpl">
+  <li class="step">
+    <span class="handle" title="Drag to reorder">⋮⋮</span>
+    <div class="body"></div>
+    <div class="ops"><button class="up" title="Move up">↑</button><button class="down" title="Move down">↓</button><button class="del" title="Delete">✕</button></div>
+  </li>
+</template>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "Macro Keypad Studio",
+  "short_name": "Keypad Studio",
+  "description": "Design and manage the JC3248W535C touch macro keypad.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0f1220",
+  "theme_color": "#0f1220",
+  "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

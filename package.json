@@ -1,0 +1,17 @@
+{
+  "name": "touch-macro-keypad",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Touch macro keypad for the Guition JC3248W535C + browser design studio on Cloudflare Workers",
+  "type": "module",
+  "scripts": {
+    "build": "sh scripts/build-firmware.sh",
+    "dev": "wrangler dev",
+    "test": "node --test web/test/*.test.js",
+    "deploy": "wrangler deploy",
+    "deploy:ci": "sh -c 'SHA=${WORKERS_CI_COMMIT_SHA:-$(git rev-parse HEAD)}; wrangler deploy --var GIT_COMMIT:$(echo $SHA | cut -c1-7) --var APP_VERSION:$npm_package_version'"
+  },
+  "devDependencies": {
+    "wrangler": "^4.149.0"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "touch-macro-keypad",
+  "main": "web/src/worker.js",
+  "compatibility_date": "2025-09-01",
+  "assets": { "directory": "./web/public", "binding": "ASSETS" },
+  "vars": { "APP_VERSION": "dev", "GIT_COMMIT": "local" }
+}

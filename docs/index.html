@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Touch Macro Keypad Spec</title>
+<meta name="description" content="Product specification for the JC3248W535C touch macro keypad and Macro Keypad Studio.">
+<style>
+  :root { --bg: #ffffff; --fg: #1b1e2e; --muted: #5e6481; --line: #dde1ee; --card: #f5f6fb; --accent: #4f7cff; --ok: #12935b; --warn: #b26b00; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0f1220; --fg: #e8eaf6; --muted: #9aa0c3; --line: #2c3256; --card: #171b2e; --ok: #29d391; --warn: #ffb648; } }
+  :root[data-theme="dark"] { --bg: #0f1220; --fg: #e8eaf6; --muted: #9aa0c3; --line: #2c3256; --card: #171b2e; --ok: #29d391; --warn: #ffb648; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  h2 { font-size: 19px; margin: 34px 0 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+  p.lead { color: var(--muted); margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 8px 0; display: block; overflow-x: auto; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+  code { background: var(--card); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  pre { background: var(--card); padding: 12px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+  .tag { font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 99px; border: 1px solid; white-space: nowrap; }
+  .v { color: var(--ok); } .u { color: var(--warn); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .card b { display: block; margin-bottom: 2px; }
+  svg text { fill: var(--fg); font: 12px system-ui, sans-serif; }
+  svg .box { fill: var(--card); stroke: var(--line); }
+  svg .ln { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#a); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Touch Macro Keypad</h1>
+  <p class="lead">Guition JC3248W535C (ESP32-S3, 3.5" 320×480 touch) running as a USB / Bluetooth macro keypad, designed from <b>Macro Keypad Studio</b> in the browser.</p>
+
+  <h2>Overview</h2>
+  <div class="grid">
+    <div class="card"><b>Types on your PC</b>USB HID keyboard when a PC has enumerated it; BLE HID keyboard otherwise.</div>
+    <div class="card"><b>Designed in the browser</b>Layouts, keycap pictures, backgrounds, press motion, light effects, click sounds and macros.</div>
+    <div class="card"><b>Record macros</b>Capture real keystrokes with timing, or simplify to text and shortcuts.</div>
+    <div class="card"><b>Click on PC speakers</b>The keypad reports each press; the studio plays the chosen sound.</div>
+  </div>
+
+  <h2>Architecture</h2>
+  <svg viewBox="0 0 640 170" width="100%" role="img" aria-label="Studio talks to keypad over Web Serial or Web Bluetooth; Cloudflare Worker serves studio and firmware; keypad types on the PC over USB or BLE HID">
+    <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#4f7cff"/></marker></defs>
+    <rect class="box" x="10" y="10" width="170" height="60" rx="8"/><text x="22" y="35">Cloudflare Worker</text><text x="22" y="55">studio + fw/*.bin</text>
+    <rect class="box" x="10" y="100" width="170" height="60" rx="8"/><text x="22" y="125">Macro Keypad Studio</text><text x="22" y="145">Chrome / Edge, PWA</text>
+    <rect class="box" x="300" y="100" width="150" height="60" rx="8"/><text x="312" y="125">JC3248W535C</text><text x="312" y="145">keypad firmware</text>
+    <rect class="box" x="520" y="100" width="110" height="60" rx="8"/><text x="532" y="125">PC</text><text x="532" y="145">types the macro</text>
+    <path class="ln" d="M95 70 V98"/>
+    <path class="ln" d="M180 122 H298"/><text x="190" y="115">Serial / BLE JSON</text>
+    <path class="ln" d="M300 140 H182"/><text x="200" y="155">press events</text>
+    <path class="ln" d="M450 130 H518"/><text x="456" y="122">USB/BLE HID</text>
+  </svg>
+
+  <h2>Hardware</h2>
+  <table>
+    <tr><th>Item</th><th>Value</th></tr>
+    <tr><td>MCU</td><td>ESP32-S3, Wi-Fi + BLE (no classic Bluetooth), 16 MB flash, 8 MB PSRAM</td></tr>
+    <tr><td>Display</td><td>3.5" IPS 320×480 portrait, AXS15231B over QSPI, full-frame refresh only</td></tr>
+    <tr><td>Touch</td><td>Capacitive, I2C 0x3B, single point</td></tr>
+    <tr><td>USB</td><td>Native USB-C. Keypad firmware runs TinyUSB: HID keyboard + CDC serial</td></tr>
+    <tr><td>Not used</td><td>microSD, NS4168 speaker amp (no speaker fitted), extra GPIO headers</td></tr>
+  </table>
+  <h3>Pin map</h3>
+  <table>
+    <tr><th>Function</th><th>GPIO</th></tr>
+    <tr><td>LCD CS / SCK</td><td>45 / 47</td></tr>
+    <tr><td>LCD D0 / D1 / D2 / D3</td><td>21 / 48 / 40 / 39</td></tr>
+    <tr><td>Backlight (PWM)</td><td>1</td></tr>
+    <tr><td>Touch SDA / SCL / INT</td><td>4 / 8 / 3 (INT unused)</td></tr>
+  </table>
+
+  <h2>Firmware</h2>
+  <table>
+    <tr><th>Module</th><th>Role</th></tr>
+    <tr><td><code>display</code></td><td>Arduino_Canvas on AXS15231B at 40 MHz QSPI; backlight PWM; touch read</td></tr>
+    <tr><td><code>gfx2d</code></td><td>Anti-aliased rounded rects, glows, rings, scaled alpha blits of <code>.565</code> keycap images</td></tr>
+    <tr><td><code>ui</code></td><td>Pages, keys, press motion, light effects, idle ambience, status and page bars, dimming</td></tr>
+    <tr><td><code>hid_out</code></td><td>USB HID (TinyUSB) or BLE HID (NimBLE 2.x) routing; BLE Nordic-UART config channel</td></tr>
+    <tr><td><code>macro</code></td><td>Background task: combos, ASCII text (US layout), pauses, raw key down/up</td></tr>
+    <tr><td><code>proto</code></td><td>Line-JSON protocol: <code>hello ls read wbegin wchunk wend rm apply run page bright bootloader reboot</code></td></tr>
+    <tr><td><code>config</code></td><td><code>/config.json</code> on LittleFS (12.9 MB partition); built-in two-page default</td></tr>
+  </table>
+  <h3>Flash layout</h3>
+  <table>
+    <tr><th>Partition</th><th>Offset</th><th>Size</th></tr>
+    <tr><td>nvs / otadata</td><td>0x9000 / 0xE000</td><td>20 KB / 8 KB</td></tr>
+    <tr><td>app0</td><td>0x10000</td><td>3 MB</td></tr>
+    <tr><td>spiffs (LittleFS: config, project, images)</td><td>0x310000</td><td>12.9 MB</td></tr>
+    <tr><td>coredump</td><td>0xFF0000</td><td>64 KB</td></tr>
+  </table>
+
+  <h2>Studio</h2>
+  <table>
+    <tr><th>Area</th><th>What you can do</th></tr>
+    <tr><td>Pages</td><td>Up to 16 pages, 40 keys each; free placement or grid; colour, gradient or picture background</td></tr>
+    <tr><td>Keycap</td><td>Flat, 3D, glass, outline, neon or picture style; any font, size, emoji; picture fill/fit/icon</td></tr>
+    <tr><td>Action</td><td>Shortcut, text, pause steps; drag to reorder; record keys (simplified or exact timing); run on keypad</td></tr>
+    <tr><td>Motion &amp; light</td><td>Push, pop, sink, bounce; glow, ripple, flash, outline; colour and speed; per-key click sound</td></tr>
+    <tr><td>Keypad</td><td>Name, brightness, dimming, status bar, idle ambient light, click sound + volume + custom sound</td></tr>
+  </table>
+
+  <h2>Verification</h2>
+  <table>
+    <tr><th>Item</th><th>Status</th><th>Notes</th></tr>
+    <tr><td>Firmware compiles (pioarduino, Arduino core 3.3.12)</td><td><span class="tag v">verified</span></td><td>Built in CI-like container; 0.8 MB of 3 MB app slot</td></tr>
+    <tr><td>Studio unit tests (keymap parity, schema, recorder, protocol mock, image packer)</td><td><span class="tag v">verified</span></td><td><code>npm test</code></td></tr>
+    <tr><td>Studio UI in Chromium (design, effects preview, recorder, export, phone width)</td><td><span class="tag v">verified</span></td><td>Playwright, headless</td></tr>
+    <tr><td>Display, keycaps, backgrounds on the board</td><td><span class="tag u">unverified</span></td><td>Needs the board</td></tr>
+    <tr><td>Press motion, glow/ripple/flash/outline, idle ambience</td><td><span class="tag u">unverified</span></td><td>Needs the board</td></tr>
+    <tr><td>USB HID typing + PC click sound</td><td><span class="tag u">unverified</span></td><td>Needs the board</td></tr>
+    <tr><td>BLE HID pairing and typing when not on USB</td><td><span class="tag u">unverified</span></td><td>Needs the board</td></tr>
+    <tr><td>Save/load over Web Serial and Web Bluetooth</td><td><span class="tag u">unverified</span></td><td>Protocol tested against a mock only</td></tr>
+    <tr><td>Browser flasher (ESP Web Tools) and update-mode restart</td><td><span class="tag u">unverified</span></td><td>Needs the board</td></tr>
+    <tr><td>Cloudflare Workers Builds firmware build time</td><td><span class="tag u">unverified</span></td><td>about 7 min from a cold cache in this sandbox; limit is 20 min</td></tr>
+  </table>
+
+  <h2>Build &amp; deploy</h2>
+<pre># firmware, local (macOS)
+cd firmware &amp;&amp; pio run -t upload --upload-port $(ls /dev/cu.usbmodem* | head -1)
+
+# studio, local
+npm install &amp;&amp; npm test &amp;&amp; npx wrangler dev
+
+# Cloudflare Workers Builds (set once in the dashboard)
+build:  npm run build        # compiles firmware into web/public/fw/
+deploy: npm run deploy:ci</pre>
+
+  <h2>Limits</h2>
+  <ul>
+    <li>Text macros type with the US keyboard layout and plain ASCII only.</li>
+    <li>Pictures and keycap designs upload over USB only; Bluetooth saves layout and macros.</li>
+    <li>The click sound plays while the studio is open or installed as an app.</li>
+    <li>Single touch point; one key press at a time.</li>
+    <li>Web Serial / Web Bluetooth need Chrome or Edge on desktop.</li>
+  </ul>
+</main>
+</body>
+</html>
