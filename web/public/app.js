@@ -2,7 +2,7 @@
 import { KEYS, MODS, codeToKey, comboText, prettyKey } from './keys.js';
 import { SCREEN, MOTIONS, LIGHTS, IDLES, validateConfig } from './schema.js';
 import { Device, SerialLink, BleLink } from './transport.js';
-import { STYLES, FONTS, compileProject, designHash, drawCap, renderCapCanvas, renderBgCanvas, importImage, asciiLabel } from './designer.js';
+import { STYLES, FONTS, compileProject, designHash, drawCap, renderCapCanvas, renderBgCanvas, renderMosaic, importImage, asciiLabel } from './designer.js';
 import { Preview } from './fx.js';
 import { Recorder, eventsToRawSteps, simplifySteps } from './macro-recorder.js';
 import { SOUND_PRESETS, playClick } from './sound.js';
@@ -153,11 +153,16 @@ async function refreshVisuals() {
   const project = state.project;
   const bgSig = JSON.stringify(page.bg);
   if (bgSig !== state.bgSig) { state.bgSig = bgSig; state.bg = await renderBgCanvas(page); }
-  const sigs = page.keys.map((k) => JSON.stringify([k.w, k.h, k.r, k.label, k.font, k.fontPx, k.fontWeight, k.text, k.labelPos, k.style, k.color, k.image, k.imageFit]));
+  const kpSig = JSON.stringify(page.keysPic || null);
+  if (kpSig !== state.kpSig) { state.kpSig = kpSig; state.mosaic = await renderMosaic(page); }
+  const mosaic = state.mosaic;
+  // keys that show a slice of the page picture depend on where they sit
+  const sigs = page.keys.map((k) => JSON.stringify([k.w, k.h, k.r, k.label, k.font, k.fontPx, k.fontWeight, k.text, k.labelPos, k.style, k.color, k.image, k.imageFit,
+    mosaic && !k.image ? [kpSig.length, kpSig.slice(-64), k.x, k.y] : 0]));
   const caps = [];
   for (let i = 0; i < page.keys.length; i++) {
     const old = state.capSig.indexOf(sigs[i]);
-    caps[i] = old >= 0 ? state.caps[old] : await renderCapCanvas(page.keys[i]);
+    caps[i] = old >= 0 ? state.caps[old] : await renderCapCanvas(page.keys[i], mosaic);
   }
   if (project !== state.project || page !== curPage()) return;   // page switched meanwhile
   state.caps = caps;
@@ -195,6 +200,12 @@ function renderPages() {
   $('bgImageWrap').hidden = bg.type !== 'image';
   $('bgFit').value = bg.fit || 'cover';
   $('bgDim').value = bg.dim || 0;
+  const kp = p.keysPic || {};
+  $('kpThumb').hidden = !kp.image;
+  if (kp.image) $('kpThumb').src = kp.image;
+  $('kpClear').disabled = !kp.image;
+  $('kpFit').value = kp.fit || 'cover';
+  $('kpDim').value = kp.dim || 0;
   $('pgDel').disabled = state.project.pages.length < 2;
 }
 
@@ -213,6 +224,9 @@ function renderKeyForm() {
   $('kRadius').value = k.r;
   $('kImgFit').value = k.imageFit || 'cover';
   $('kImgClear').disabled = !k.image;
+  $('kImgThumb').hidden = !k.image;
+  if (k.image) $('kImgThumb').src = k.image;
+  $('kImgPage').hidden = !(curPage().keysPic?.image && k.image);
   for (const f of ['x', 'y', 'w', 'h']) $('k' + f.toUpperCase()).value = Math.round(k[f]);
   renderStyleSwatches(k);
 }
@@ -521,7 +535,7 @@ function toggleRecord() {
 function selectPage(i) {
   state.page = Math.max(0, Math.min(i, state.project.pages.length - 1));
   state.key = curPage().keys.length ? 0 : -1;
-  state.capSig = []; state.caps = []; state.bgSig = '';
+  state.capSig = []; state.caps = []; state.bgSig = ''; state.kpSig = null;
   preview.anims = [];
   refreshVisuals();
   renderPanels();
@@ -600,7 +614,7 @@ $('screen').addEventListener('pointermove', (e) => {
     k.x = Math.max(0, Math.min(SCREEN.w - k.w, snap(drag.k0.x + x - drag.x0)));
     k.y = Math.max(0, Math.min(SCREEN.h - k.h, snap(drag.k0.y + y - drag.y0)));
   }
-  if (drag.resize) refreshVisuals();
+  if (drag.resize || (state.mosaic && !k.image)) refreshVisuals();   // moving re-slices the page picture
   for (const f of ['x', 'y', 'w', 'h']) $('k' + f.toUpperCase()).value = Math.round(k[f]);
 });
 const endDrag = () => {
@@ -819,6 +833,40 @@ function wire() {
   bindInput('bgDim', (t) => { curPage().bg.dim = +t.value; changed(); });
   $('bgPick').onclick = () => $('bgFile').click();
   $('bgClear').onclick = () => { curPage().bg.image = null; changed(); };
+  // picture across keys
+  const kpSet = (patch) => { curPage().keysPic = { fit: 'cover', dim: 0, ...curPage().keysPic, ...patch }; changed({ panels: true }); };
+  $('kpPick').onclick = () => $('kpFile').click();
+  $('kpClear').onclick = () => kpSet({ image: null });
+  bindInput('kpFit', (t) => kpSet({ fit: t.value }), 'change');
+  bindInput('kpDim', (t) => { curPage().keysPic = { fit: 'cover', ...curPage().keysPic, dim: +t.value }; changed(); });
+  $('kpFile').onchange = async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    kpSet({ image: await importImage(f, 960) });
+    e.target.value = '';
+  };
+  $('kImgPage').onclick = () => { const k = curKey(); if (k) { k.image = null; if (k.style === 'image') k.style = '3d'; changed({ panels: true }); } };
+
+  // drag a photo onto a key in the preview
+  const scr = $('screen');
+  scr.addEventListener('dragover', (e) => { if ([...e.dataTransfer.items].some((i) => i.kind === 'file')) { e.preventDefault(); scr.classList.add('dropping'); } });
+  scr.addEventListener('dragleave', () => scr.classList.remove('dropping'));
+  scr.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    scr.classList.remove('dropping');
+    const f = [...e.dataTransfer.files].find((x) => x.type.startsWith('image/'));
+    if (!f) return;
+    const { x, y } = canvasPoint(e);
+    const i = hitKey(x, y);
+    if (i < 0) { toast('Drop the picture onto a key.'); return; }
+    selectKey(i);
+    const k = curKey();
+    k.image = await importImage(f, 400);
+    if (k.imageFit !== 'icon') k.style = 'image';
+    changed({ panels: true });
+    toast(`Picture set on "${k.label || 'key'}"`);
+  });
+
   $('bgFile').onchange = async (e) => {
     const f = e.target.files[0];
     if (!f) return;
@@ -987,7 +1035,7 @@ function setProject(p) {
   state.project = p;
   state.page = 0;
   state.key = p.pages[0].keys.length ? 0 : -1;
-  state.capSig = []; state.bgSig = '';
+  state.capSig = []; state.bgSig = ''; state.kpSig = null;
   db.set('project', p);
   refreshVisuals();
   renderPanels();

@@ -41,7 +41,9 @@ function drawCover(ctx, im, x, y, w, h, fit = 'cover') {
 }
 
 // Draws one keycap at (0,0) size w x h on ctx. Transparent outside the rounded shape.
-export async function drawCap(ctx, key) {
+// mosaic: optional 320x480 canvas with the page's "picture across keys"; a key without its own
+// picture shows its slice (key.x, key.y, key.w, key.h) of it.
+export async function drawCap(ctx, key, mosaic = null) {
   const { w, h } = key;
   const r = key.r ?? 14;
   const c = key.color || '#2f6fed';
@@ -76,6 +78,25 @@ export async function drawCap(ctx, key) {
   } else if (style === 'image') {
     roundRect(ctx, 0, 0, w, h, r); ctx.fillStyle = c; ctx.fill();
   }
+  const slice = mosaic && !key.image;
+  if (slice) {
+    ctx.save();
+    roundRect(ctx, 0, 0, w, h, r); ctx.clip();
+    ctx.drawImage(mosaic, key.x, key.y, w, h, 0, 0, w, h);
+    // keep a hint of the chosen keycap style on top of the picture
+    if (style === '3d') {
+      const g = ctx.createLinearGradient(0, h * 0.55, 0, h);
+      g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.45)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    } else if (style === 'glass') {
+      const hl = ctx.createLinearGradient(0, 0, 0, h * 0.45);
+      hl.addColorStop(0, 'rgba(255,255,255,0.4)'); hl.addColorStop(1, 'rgba(255,255,255,0)');
+      roundRect(ctx, 3, 3, w - 6, h * 0.45, r - 2); ctx.fillStyle = hl; ctx.fill();
+    }
+    ctx.restore();
+    if (style === 'glass') { roundRect(ctx, 0.75, 0.75, w - 1.5, h - 1.5, r); ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1.5; ctx.stroke(); }
+    if (style === 'outline' || style === 'neon') { roundRect(ctx, 1.5, 1.5, w - 3, h - 3, r); ctx.strokeStyle = c; ctx.lineWidth = 3; ctx.stroke(); }
+  }
   if (key.image) {
     const im = await loadImage(key.image);
     if (im) {
@@ -93,7 +114,7 @@ export async function drawCap(ctx, key) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if (style === 'neon') { ctx.shadowColor = key.text || c; ctx.shadowBlur = 8; }
-    else if (key.image) { ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4; }
+    else if (key.image || slice) { ctx.shadowColor = 'rgba(0,0,0,0.8)'; ctx.shadowBlur = 4; }
     const lines = String(key.label).split('\n');
     const lh = px * 1.15;
     const pos = key.labelPos || (key.image && key.imageFit === 'icon' ? 'bottom' : 'center');
@@ -148,9 +169,22 @@ function canvas(w, h) {
   return c;
 }
 
-export async function renderCapCanvas(key) {
+export async function renderCapCanvas(key, mosaic = null) {
   const c = canvas(key.w, key.h);
-  await drawCap(c.getContext('2d'), key);
+  await drawCap(c.getContext('2d'), key, mosaic);
+  return c;
+}
+
+// The page's "picture across keys" at screen size (null when the page has none).
+export async function renderMosaic(page) {
+  const kp = page.keysPic;
+  if (!kp?.image) return null;
+  const im = await loadImage(kp.image);
+  if (!im) return null;
+  const c = canvas(SCREEN.w, SCREEN.h);
+  const ctx = c.getContext('2d');
+  drawCover(ctx, im, 0, 0, SCREEN.w, SCREEN.h, kp.fit || 'cover');
+  if (kp.dim) { ctx.fillStyle = `rgba(0,0,0,${kp.dim})`; ctx.fillRect(0, 0, SCREEN.w, SCREEN.h); }
   return c;
 }
 export async function renderBgCanvas(page) {
@@ -182,8 +216,9 @@ export async function compileProject(project) {
       bg.img = name;
     }
     const keys = [];
+    const mosaic = await renderMosaic(p);
     for (const k of p.keys) {
-      const c = await renderCapCanvas(k);
+      const c = await renderCapCanvas(k, mosaic);
       const data = c.getContext('2d').getImageData(0, 0, k.w, k.h).data;
       const bytes = pack565(data, k.w, k.h, true);
       const name = `img/${fnv1a(bytes)}.565`;
