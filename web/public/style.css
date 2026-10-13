@@ -144,3 +144,7 @@ label .val { float: right; color: var(--text); font-variant-numeric: tabular-num
 .icongrid .more { grid-column: 1 / -1; font-size: 12px; }
 .dlgfoot { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
 .dlgfoot a { color: inherit; }
+
+.banner.welcome { background: var(--panel); color: var(--text); border-color: var(--accent); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.banner.welcome[hidden] { display: none; }
+.banner.welcome a { color: var(--accent); }

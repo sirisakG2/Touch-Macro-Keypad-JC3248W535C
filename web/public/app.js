@@ -1210,6 +1210,11 @@ async function init() {
   $('btnUsb').disabled = !SerialLink.supported();
   $('btnBle').disabled = !BleLink.supported();
   wire();
+  // first visit: point to the guide (remembered per browser; storage can be unavailable)
+  try {
+    if (!localStorage.getItem('guideSeen')) $('welcome').hidden = false;
+    $('welcomeClose').onclick = () => { $('welcome').hidden = true; try { localStorage.setItem('guideSeen', '1'); } catch {} };
+  } catch {}
   const saved = await db.get('project').catch(() => null);
   setProject(saved || defaultProject());
   state.unsaved = false;

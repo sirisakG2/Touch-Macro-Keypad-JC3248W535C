@@ -95,28 +95,35 @@
   </table>
 
   <h2>Studio</h2>
+  <p>Full how-to: <a href="../web/public/guide.html">user guide</a> (also served at <code>/guide.html</code> on the studio site).</p>
   <table>
     <tr><th>Area</th><th>What you can do</th></tr>
-    <tr><td>Pages</td><td>Up to 16 pages, 40 keys each; free placement or grid; colour, gradient or picture background</td></tr>
-    <tr><td>Keycap</td><td>Flat, 3D, glass, outline, neon or picture style; any font, size, emoji; picture fill/fit/icon</td></tr>
+    <tr><td>Pages</td><td>Up to 16 pages, 40 keys each; free placement or grid; colour, gradient or picture background; picture across all keys</td></tr>
+    <tr><td>Screen</td><td>Portrait, landscape (turned left/right) or upside-down (firmware 1.4.0+); no tilt sensor on the board</td></tr>
+    <tr><td>Keycap</td><td>Flat, 3D, glass, outline, neon or picture style; any font, size, emoji; text transparency; Lucide icon (above / left / only); per-key picture with drag-and-drop</td></tr>
+    <tr><td>Apply to all</td><td>Text &amp; icon style or keycap &amp; picture layout to this page or all pages</td></tr>
     <tr><td>Action</td><td>Shortcut, text, pause steps; drag to reorder; record keys (simplified or exact timing); run on keypad</td></tr>
     <tr><td>Motion &amp; light</td><td>Push, pop, sink, bounce; glow, ripple, flash, outline; colour and speed; per-key click sound</td></tr>
-    <tr><td>Keypad</td><td>Name, brightness, dimming, status bar, idle ambient light, click sound + volume + custom sound</td></tr>
+    <tr><td>Keypad</td><td>Name, orientation, brightness, dimming, status bar, idle ambient light, click sound; firmware version and one-click update</td></tr>
   </table>
 
   <h2>Verification</h2>
   <table>
     <tr><th>Item</th><th>Status</th><th>Notes</th></tr>
-    <tr><td>Firmware compiles (pioarduino, Arduino core 3.3.12)</td><td><span class="tag v">verified</span></td><td>Built in CI-like container; 0.8 MB of 3 MB app slot</td></tr>
-    <tr><td>Studio unit tests (keymap parity, schema, recorder, protocol mock, image packer)</td><td><span class="tag v">verified</span></td><td><code>npm test</code></td></tr>
-    <tr><td>Studio UI in Chromium (design, effects preview, recorder, export, phone width)</td><td><span class="tag v">verified</span></td><td>Playwright, headless</td></tr>
-    <tr><td>Display, keycaps, backgrounds on the board</td><td><span class="tag u">unverified</span></td><td>Needs the board</td></tr>
-    <tr><td>Press motion, glow/ripple/flash/outline, idle ambience</td><td><span class="tag u">unverified</span></td><td>Needs the board</td></tr>
-    <tr><td>USB HID typing + PC click sound</td><td><span class="tag u">unverified</span></td><td>Needs the board</td></tr>
-    <tr><td>BLE HID pairing and typing when not on USB</td><td><span class="tag u">unverified</span></td><td>Needs the board</td></tr>
-    <tr><td>Save/load over Web Serial and Web Bluetooth</td><td><span class="tag u">unverified</span></td><td>Protocol tested against a mock only</td></tr>
-    <tr><td>Browser flasher (ESP Web Tools) and update-mode restart</td><td><span class="tag u">unverified</span></td><td>Needs the board</td></tr>
-    <tr><td>Cloudflare Workers Builds firmware build time</td><td><span class="tag u">unverified</span></td><td>about 7 min from a cold cache in this sandbox; limit is 20 min</td></tr>
+    <tr><td>Firmware compiles (pioarduino, Arduino core 3.3.12)</td><td><span class="tag v">verified</span></td><td>0.8 MB of a 3 MB app slot</td></tr>
+    <tr><td>Studio unit tests</td><td><span class="tag v">verified</span></td><td><code>npm test</code>: keymap parity, schema, recorder, CRC/protocol, OTA, serial close, icons, orientation</td></tr>
+    <tr><td>Studio UI in Chromium</td><td><span class="tag v">verified</span></td><td>Playwright, headless: design, effects, recorder, pictures, icons, landscape preview</td></tr>
+    <tr><td>Browser flasher (first install)</td><td><span class="tag v">verified</span></td><td>On the user's board; BOOT needed when the keypad firmware is running</td></tr>
+    <tr><td>Layout, keycaps and pictures on the board</td><td><span class="tag v">verified</span></td><td>Reported by the user after Save to keypad</td></tr>
+    <tr><td>Save to keypad over USB (Web Serial)</td><td><span class="tag v">verified</span></td><td>After the CRC fix (studio 6515159 / firmware 1.3.2)</td></tr>
+    <tr><td>One-click firmware update from the studio (OTA)</td><td><span class="tag v">verified</span></td><td>Reinstall/Update ran to 100 % and the keypad restarted by itself</td></tr>
+    <tr><td>Version in the top bar</td><td><span class="tag v">verified</span></td><td>Showed 1.3.1 on the board</td></tr>
+    <tr><td>USB HID typing + PC click sound</td><td><span class="tag v">verified</span></td><td>Reported working after firmware 1.3.4</td></tr>
+    <tr><td>Press motion, glow/ripple/flash/outline, idle ambience on the board</td><td><span class="tag u">unverified</span></td><td>Not yet confirmed on hardware</td></tr>
+    <tr><td>BLE HID pairing and typing; saving over Web Bluetooth</td><td><span class="tag u">unverified</span></td><td>Not yet tried</td></tr>
+    <tr><td>Landscape / upside-down orientation on the board</td><td><span class="tag u">unverified</span></td><td>Firmware 1.4.0; preview verified in the studio</td></tr>
+    <tr><td>Icons on the board</td><td><span class="tag u">unverified</span></td><td>Rendered into keycap images like labels, so expected to match the preview</td></tr>
+    <tr><td>Cloudflare Workers Builds</td><td><span class="tag v">verified</span></td><td>About 6 min with a firmware compile, about 35 s when the committed build matches</td></tr>
   </table>
 
   <h2>Build &amp; deploy</h2>
@@ -127,7 +134,7 @@ cd firmware &amp;&amp; pio run -t upload --upload-port $(ls /dev/cu.usbmodem* | 
 npm install &amp;&amp; npm test &amp;&amp; npx wrangler dev
 
 # Cloudflare Workers Builds (set once in the dashboard)
-build:  npm run build        # compiles firmware into web/public/fw/
+build:  npm run build        # compiles firmware only if firmware/ changed
 deploy: npm run deploy:ci</pre>
 
   <h2>Limits</h2>
@@ -137,6 +144,8 @@ deploy: npm run deploy:ci</pre>
     <li>The click sound plays while the studio is open or installed as an app.</li>
     <li>Single touch point; one key press at a time.</li>
     <li>Web Serial / Web Bluetooth need Chrome or Edge on desktop.</li>
+    <li>No gyro/accelerometer on the board: orientation is chosen in the studio.</li>
+    <li>Firmware updates from the studio need USB (not Bluetooth).</li>
   </ul>
 </main>
 </body>

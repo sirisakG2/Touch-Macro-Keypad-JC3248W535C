@@ -18,3 +18,11 @@ Differences worth knowing:
 
 - **USB mode.** With TinyUSB the board no longer appears as `USB JTAG/serial debug unit` while the keypad runs. `pio run -t upload` still works through the CDC 1200-baud reset; if it doesn't, hold BOOT, tap RESET, release BOOT. The studio's *Restart into firmware update mode* button does the same thing from the browser.
 - **Touch INT (GPIO 3)** is not in the skill. Polling works (skill-verified), so it is not used.
+
+## Learned on the real board
+
+- **USB starts before `setup()`.** With `ARDUINO_USB_CDC_ON_BOOT=1` the core calls `USB.begin()` before `setup()`, so `ARDUINO_USB_STARTED_EVENT` fires before a handler registered in `setup()` can see it. Read the state directly instead: `(bool)USB && !tud_suspended()` (fixed in 1.3.4).
+- **Browser installer and TinyUSB.** While the keypad firmware runs, the board shows up as *Touch Macro Keypad* (TinyUSB), and ESP Web Tools cannot reset it into the ROM loader ("Failed to initialize"). Either hold BOOT while plugging in, send the `bootloader` command (`usb_persist_restart(RESTART_BOOTLOADER)`), or, from 1.3.0, update in place over the app's own serial link (OTA, two app slots).
+- **Installer stuck at "wrapping up".** After flashing, the device re-enumerates as a different USB device, so ESP Web Tools waits forever. `new_install_improv_wait_time: 0` in the manifest avoids it.
+- **No gyro or accelerometer** on this board, so screen orientation is a setting. Rotation is done in software because the AXS15231B is portrait-only.
+- **Multiple FreeRTOS tasks and `millis()`.** A timestamp written by another task can be newer than the reader's `now`; `now - t` must be clamped (bug fixed in 1.3.3).

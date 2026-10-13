@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keypad User Guide</title>
+<meta name="description" content="How to install, design, use and update the JC3248W535C touch macro keypad and Macro Keypad Studio.">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<style>
+  .guide { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 28px; max-width: 1100px; margin: 0 auto; padding: 20px 16px 80px; }
+  .toc { position: sticky; top: 76px; align-self: start; font-size: 13px; }
+  .toc ol { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 2px; }
+  .toc a { display: block; padding: 5px 10px; border-radius: 7px; color: var(--muted); text-decoration: none; }
+  .toc a:hover { background: var(--panel2); color: var(--text); }
+  article { min-width: 0; line-height: 1.6; font-size: 15px; }
+  article h1 { font-size: 28px; margin: 0 0 6px; }
+  article .lead { color: var(--muted); font-size: 16px; margin: 0 0 18px; }
+  article section { scroll-margin-top: 80px; border-top: 1px solid var(--line); padding-top: 18px; margin-top: 26px; }
+  article h2 { font-size: 20px; text-transform: none; letter-spacing: 0; color: var(--text); margin: 0 0 10px; }
+  article h3 { font-size: 15px; color: var(--text); margin: 18px 0 6px; }
+  article ol, article ul { padding-left: 22px; }
+  article li { margin: 4px 0; }
+  article code, article kbd { background: var(--panel2); border: 1px solid var(--line); border-radius: 5px; padding: 0 5px; font-size: 13px; }
+  article kbd { font-family: inherit; }
+  article a { color: var(--accent); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 12px 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .card b { display: block; margin-bottom: 2px; }
+  .note { background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; padding: 10px 14px; margin: 12px 0; }
+  .note.warn { border-left-color: #f0a020; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 10px 0; display: block; overflow-x: auto; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .cta { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0 4px; }
+  details { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px 14px; margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 6px; }
+  @media (max-width: 860px) { .guide { grid-template-columns: 1fr; } .toc { position: static; } .toc ol { flex-direction: row; flex-wrap: wrap; } }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><img src="icons/icon.svg" alt="" width="28" height="28"><span>Keypad User Guide</span><small id="appVer" class="ver" hidden></small></div>
+  <div class="actions"><a class="btn primary" href="./">Open the studio</a><a class="btn ghost" href="flasher.html">Firmware</a></div>
+</header>
+
+<div class="guide">
+  <nav class="toc" aria-label="Contents">
+    <ol>
+      <li><a href="#what">1. What it is</a></li>
+      <li><a href="#install">2. First-time install</a></li>
+      <li><a href="#connect">3. Connect</a></li>
+      <li><a href="#design">4. Design your keys</a></li>
+      <li><a href="#actions">5. Actions &amp; macros</a></li>
+      <li><a href="#fx">6. Motion, light &amp; sound</a></li>
+      <li><a href="#save">7. Save vs. Update</a></li>
+      <li><a href="#update">8. Updating firmware</a></li>
+      <li><a href="#trouble">9. Troubleshooting</a></li>
+      <li><a href="#credits">10. Credits</a></li>
+    </ol>
+  </nav>
+
+  <article>
+    <h1>Touch Macro Keypad</h1>
+    <p class="lead">A 3.5" touchscreen macro keypad built on the Guition JC3248W535C, designed entirely from your browser.</p>
+    <div class="cta"><a class="btn primary" href="./">Open Macro Keypad Studio</a><a class="btn" href="flasher.html">Install firmware</a><a class="btn ghost" href="https://github.com/sirisakG2/Touch-Macro-Keypad-JC3248W535C" target="_blank" rel="noopener">Source on GitHub</a></div>
+
+    <section id="what">
+      <h2>1. What it is</h2>
+      <div class="cards">
+        <div class="card"><b>Types on your computer</b>A USB keyboard when plugged into a PC or Mac; a Bluetooth keyboard when it runs on a charger or battery.</div>
+        <div class="card"><b>Designed in the browser</b>Pages, keycaps, icons, pictures, backgrounds, effects and macros - all in Macro Keypad Studio.</div>
+        <div class="card"><b>Updates with one click</b>New firmware installs over USB from the studio; the keypad restarts by itself.</div>
+        <div class="card"><b>Click sound on the PC</b>The studio plays a key-click on your speakers every time you tap the keypad.</div>
+      </div>
+      <h3>You need</h3>
+      <ul>
+        <li>A Guition <b>JC3248W535C</b> board (ESP32-S3, 3.5" 320&times;480 touchscreen).</li>
+        <li>A USB-C <b>data</b> cable (charge-only cables don't work).</li>
+        <li><b>Chrome or Edge on a computer</b> (Windows, macOS, Linux, ChromeOS) - other browsers can't talk to USB/Bluetooth devices.</li>
+      </ul>
+    </section>
+
+    <section id="install">
+      <h2>2. First-time install</h2>
+      <ol>
+        <li>Plug the board into the computer.</li>
+        <li>Open the <a href="flasher.html">Firmware page</a> and click <b>Install firmware</b>.</li>
+        <li>Pick the port called <b>USB JTAG/serial debug unit</b> and confirm. Installing takes about a minute.</li>
+        <li>When it's done the keypad restarts and shows <b>Macro Keypad v…</b>, then the default layout.</li>
+      </ol>
+      <div class="note warn"><b>"Failed to initialize"?</b> The board isn't in install mode. Unplug it, <b>hold the BOOT button</b> (one of the two tiny buttons in the hole on the back), plug it back in, release BOOT, then try again. The screen stays dark in this mode - that's normal. Press RESET (or re-plug) after installing.</div>
+      <p>After the first install you never need the BOOT button again - see <a href="#update">Updating firmware</a>.</p>
+    </section>
+
+    <section id="connect">
+      <h2>3. Connect</h2>
+      <h3>As a keyboard</h3>
+      <ul>
+        <li><b>USB:</b> plug it into the computer - it types immediately. The keypad's top bar shows <b style="color:#29d391">USB</b>.</li>
+        <li><b>Bluetooth:</b> power it from a charger or battery. The top bar shows <b>BLE…</b> while it waits; pair <b>Macro Keypad</b> in your computer's Bluetooth settings like any keyboard. Then it shows <b style="color:#58a6ff">BLE</b>.</li>
+        <li><b>---</b> means it isn't connected to anything, so taps can't type.</li>
+      </ul>
+      <h3>To the studio</h3>
+      <ol>
+        <li>Open the <a href="./">studio</a> in Chrome/Edge.</li>
+        <li>Click <b>USB</b> (recommended) or <b>Bluetooth</b> at the top and choose the keypad.</li>
+        <li>The chip turns green, e.g. <code>USB · fw 1.4.0</code>.</li>
+      </ol>
+      <p>Bluetooth can save layouts and macros, but pictures, keycap designs and firmware updates need USB.</p>
+    </section>
+
+    <section id="design">
+      <h2>4. Design your keys</h2>
+      <p>Click a key on the studio's screen to select it. Drag to move it, drag the white corner to resize. <b>Try it</b> (above the screen) lets you tap keys to preview effects and sounds.</p>
+      <h3>Pages &amp; layout</h3>
+      <ul>
+        <li><b>Pages</b> (left panel): add, duplicate, reorder, rename. More than one page adds the <b>&lt; &gt;</b> bar at the bottom of the keypad.</li>
+        <li><b>Layout grid:</b> set rows, columns, margin and gap, then <b>Arrange keys in grid</b>.</li>
+        <li><b>Background:</b> a colour, a gradient or a picture (with fit and darken).</li>
+        <li><b>Screen orientation</b> (Keypad tab): portrait, landscape (keypad turned left or right) or upside-down. The board has no tilt sensor, so you choose it here.</li>
+      </ul>
+      <h3>Keycap tab</h3>
+      <ul>
+        <li><b>Label:</b> any text, any language, emoji. Font, size, weight, colour, position and <b>text transparency</b> (0 % solid - 100 % invisible).</li>
+        <li><b>Icon:</b> click <b>Choose icon…</b> for a searchable table of 1,800+ free icons (search "copy", "volume", "mail"…). Choose colour, size and placement: above the label, left of it, or icon only.</li>
+        <li><b>Keycap style:</b> flat, 3D, glass, outline, neon or picture; colour and corner rounding.</li>
+        <li><b>Picture:</b> <b>Choose picture…</b> or simply <b>drag a photo onto a key</b> on the screen. Fit: fill, fit inside, or small icon above the label.</li>
+        <li><b>Picture across keys</b> (left panel): one picture spread over all keys of a page - each key shows its part. A key's own picture wins.</li>
+        <li><b>Apply … to This page / All pages:</b> copy the selected key's text &amp; icon style, or its keycap &amp; picture layout, to the other keys.</li>
+      </ul>
+    </section>
+
+    <section id="actions">
+      <h2>5. Actions &amp; macros</h2>
+      <p>The <b>Action</b> tab lists what a key types, top to bottom:</p>
+      <ul>
+        <li><b>+ Shortcut</b> - modifier boxes (Ctrl, Shift, Alt, Win/Cmd) plus a key. Easiest: click <b>Press keys…</b> and press the shortcut.</li>
+        <li><b>+ Text</b> - types a piece of text.</li>
+        <li><b>+ Pause</b> - waits (up to 10 s).</li>
+        <li><b>● Record keys</b> - type on your keyboard, click Stop. Tidied into text and shortcuts, or tick <b>Keep exact timing</b> to replay precisely.</li>
+        <li>Drag steps (⋮⋮) or use ↑ ↓ to reorder; <b>Run on keypad</b> tests it.</li>
+      </ul>
+      <div class="note"><b>On a Mac</b> use <b>Win/Cmd</b>, not Ctrl: Copy = Cmd+C, Paste = Cmd+V. The built-in sample keys use Ctrl (Windows).</div>
+      <div class="note warn">Text is typed with the <b>US keyboard layout</b> and plain characters (A–Z, digits, punctuation). Labels can use any language - only typed text is limited.</div>
+    </section>
+
+    <section id="fx">
+      <h2>6. Motion, light &amp; sound</h2>
+      <ul>
+        <li><b>Press motion:</b> push, pop, sink, bounce or none.</li>
+        <li><b>Light:</b> glow, ripple, flash or outline, with colour and speed. <b>Apply … to whole page</b> copies it.</li>
+        <li><b>Idle ambient light</b> (Keypad tab): breathe, rainbow or wave after a few seconds without touches.</li>
+        <li><b>Brightness &amp; dimming</b> (Keypad tab): the screen dims after a while; the first touch only wakes it.</li>
+        <li><b>Click sound on PC</b> (Keypad tab): pick a sound or upload your own. It plays while the studio is open (or installed as an app via the address bar) and connected.</li>
+      </ul>
+    </section>
+
+    <section id="save">
+      <h2>7. Save to keypad vs. Update firmware</h2>
+      <table>
+        <tr><th></th><th>Save to keypad</th><th>Update firmware</th></tr>
+        <tr><td>Sends</td><td>Your design: pages, keys, pictures, icons, effects, macros</td><td>The keypad's program</td></tr>
+        <tr><td>When</td><td>After <b>every</b> design change</td><td>Only when a new version is available</td></tr>
+        <tr><td>Keypad restarts?</td><td>No - shows "Saved"</td><td>Yes, by itself</td></tr>
+        <tr><td>Changes your layout?</td><td>Yes</td><td>No, it's kept</td></tr>
+      </table>
+      <p>The <b>Save to keypad</b> button shows an <b style="color:#f0a020">orange dot</b> when the keypad doesn't have your latest design, and <b style="color:#29d391">Saved ✓</b> when it does.</p>
+    </section>
+
+    <section id="update">
+      <h2>8. Updating firmware</h2>
+      <ol>
+        <li>Connect the studio over <b>USB</b>.</li>
+        <li>Open the <b>Keypad</b> tab → <b>Firmware</b>. It shows the installed and latest version.</li>
+        <li>Click <b>Update to x.y.z</b>. The keypad shows "Updating n %", restarts by itself and the studio reconnects. No buttons needed; your layout is kept.</li>
+      </ol>
+      <p>Keypads older than <b>1.3.0</b> show <b>Update … (one-time setup)</b>: the keypad switches itself into install mode and the Firmware page opens - click Install, pick <i>USB JTAG/serial debug unit</i>, then <b>Save to keypad</b> once (this one-time step clears the keypad's storage; your design stays in the browser).</p>
+      <p>To see which version a keypad runs: the small grey number in its top bar, the startup screen, or hold the top bar for 1.5 s.</p>
+    </section>
+
+    <section id="trouble">
+      <h2>9. Troubleshooting</h2>
+      <details><summary>Tapping a key does nothing</summary>
+        <ul><li>Look at the keypad's top bar: <b>---</b> means it isn't connected - plug in USB or pair Bluetooth.</li>
+        <li>In the studio's Keypad tab, <i>Typing via</i> should say USB or BLE. Update the firmware if it says NONE on an old version.</li>
+        <li>On a Mac, Ctrl shortcuts do nothing in most apps - change them to Win/Cmd.</li>
+        <li>If the screen was dim, the first tap only wakes it.</li></ul></details>
+      <details><summary>No click sound</summary>The studio must be open and connected, <i>Play a click…</i> ticked (Keypad tab), volume up, and the key's own sound not set to "No sound". Click anywhere in the studio once - browsers only allow sound after a click.</details>
+      <details><summary>"Save failed: crc mismatch"</summary>Fixed in studio build 6515159 / firmware 1.3.2. Reload the studio (Cmd/Ctrl+Shift+R) and update the firmware.</details>
+      <details><summary>Firmware page: "Failed to initialize" or stuck at "wrapping up"</summary>Use the studio's <b>Update firmware</b> button instead. If you must use the Firmware page: hold BOOT while plugging in, pick <i>USB JTAG/serial debug unit</i>; if it stays on "wrapping up" after 100 %, just close it and press RESET.</details>
+      <details><summary>The studio page froze ("Page Unresponsive")</summary>Fixed in studio build 85d9c74. Reload with Cmd/Ctrl+Shift+R.</details>
+      <details><summary>Pictures don't appear on the keypad</summary>Pictures and keycap designs only transfer over USB. Connect over USB and Save again.</details>
+      <details><summary>Landscape looks upside down</summary>Choose the other landscape option in the Keypad tab and Save.</details>
+      <details><summary>Start over</summary>Export your design first (Export button). Then <b>Load from keypad</b> / Import, or use the Firmware page with <i>Erase</i> to wipe the keypad completely.</details>
+    </section>
+
+    <section id="credits">
+      <h2>10. Credits &amp; licences</h2>
+      <ul>
+        <li>Icons: <a href="https://lucide.dev" target="_blank" rel="noopener">Lucide</a> (ISC License).</li>
+        <li>Firmware libraries: <a href="https://github.com/moononournation/Arduino_GFX" target="_blank" rel="noopener">Arduino_GFX</a>, <a href="https://github.com/h2zero/NimBLE-Arduino" target="_blank" rel="noopener">NimBLE-Arduino</a>, <a href="https://arduinojson.org" target="_blank" rel="noopener">ArduinoJson</a>, Arduino-ESP32 / TinyUSB.</li>
+        <li>Browser installer: <a href="https://esphome.github.io/esp-web-tools/" target="_blank" rel="noopener">ESP Web Tools</a>.</li>
+        <li>Hosting: Cloudflare Workers. Source: <a href="https://github.com/sirisakG2/Touch-Macro-Keypad-JC3248W535C" target="_blank" rel="noopener">GitHub</a>.</li>
+      </ul>
+    </section>
+  </article>
+</div>
+<script type="module" src="ver.js"></script>
+</body>
+</html>
